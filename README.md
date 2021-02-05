@@ -4,20 +4,70 @@ This is the source code of the toolforge jobs framework.
 
 ## Installation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
-
-```bash
-pip install foobar
+```console
+toolsbeta.test@toolsbeta-sgebastion-04:~/jobs-framework-api$ python3 api.py
+[..]
 ```
 
 ## Usage
 
-```python
-import foobar
-
-foobar.pluralize('word') # returns 'words'
-foobar.pluralize('goose') # returns 'geese'
-foobar.singularize('phenomena') # returns 'phenomenon'
+```console
+aborrero@toolsbeta-sgebastion-04:~ $ curl localhost:5000/api/v1/run/ -d "name=test4" -d "type=t" -d "cmd=true" -X POST
+"job.batch/test4 created\n"
+aborrero@toolsbeta-sgebastion-04:~ $ curl localhost:5000/api/v1/list/
+[
+    {
+        "cmd": "true",
+        "name": "test",
+        "namespace": "tool-test",
+        "status": "unknown",
+        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+        "user": "test"
+    },
+    {
+        "cmd": "true",
+        "name": "test2",
+        "namespace": "tool-test",
+        "status": "unknown",
+        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+        "user": "test"
+    },
+    {
+        "cmd": "true",
+        "name": "test3",
+        "namespace": "tool-test",
+        "status": "unknown",
+        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+        "user": "test"
+    },
+    {
+        "cmd": "true",
+        "name": "test4",
+        "namespace": "tool-test",
+        "status": "unknown",
+        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+        "user": "test"
+    }
+]
+aborrero@toolsbeta-sgebastion-04:~ $ curl localhost:5000/api/v1/flush/ -X DELETE
+null
+aborrero@toolsbeta-sgebastion-04:~ 3s $ curl localhost:5000/api/v1/list/
+[]
+aborrero@toolsbeta-sgebastion-04:~ $ curl localhost:5000/api/v1/run/ -d "name=test" -d "type=t" -d "cmd=true" -X POST
+"job.batch/test created\n"
+aborrero@toolsbeta-sgebastion-04:~ 6s $ curl localhost:5000/api/v1/show/test
+{
+    "cmd": "true",
+    "name": "test",
+    "namespace": "tool-test",
+    "status": "unknown",
+    "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+    "user": "test"
+}
+aborrero@toolsbeta-sgebastion-04:~ $ curl localhost:5000/api/v1/delete/test -X DELETE
+"job.batch \"test\" deleted\n"
+aborrero@toolsbeta-sgebastion-04:~ $ curl localhost:5000/api/v1/list/
+[]
 ```
 
 ## Contributing
