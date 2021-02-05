@@ -1,0 +1,6 @@
+*.py[cod]
+/.python-version
+/.tox
+/config.yaml
+__pycache__/
+*.swp
