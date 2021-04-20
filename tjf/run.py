@@ -1,6 +1,7 @@
 from common.k8sclient import KubectlClient
 from tjf.job import Job
 from flask_restful import Resource, Api, reqparse
+from tjf.containers import validate_container_type
 
 # arguments that the API understands
 parser = reqparse.RequestParser()
@@ -18,6 +19,9 @@ class Run(Resource):
         ns = "tool-test"
         username = "test"
         kubeconfig_file = "/data/project/test/.kube/config"
+
+        if not validate_container_type(args.type):
+            return "Invalid container type", 500
 
         # TODO: add support for schedule & continuous
         job = Job(args.cmd, args.type, args.name, ns, username, status=None)

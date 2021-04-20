@@ -1,25 +1,25 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: naame
+  name: test
   namespace: tool-test
 spec:
-  backoffLimit: '3'
+  backoffLimit: 3
   template:
     spec:
       containers:
       - command:
-        - mycmd
+        - 'true'
         env:
         - name: HOME
           value: /data/project/test
         image: docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest
-        name: naame
+        name: test
         volumeMounts:
         - mountPath: /data/project
           name: home
         workingDir: /data/project/test
-      retartPolicy: Never
+      restartPolicy: Never
       volumes:
       - hostPath:
           path: /data/project
