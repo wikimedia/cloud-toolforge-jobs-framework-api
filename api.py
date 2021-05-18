@@ -18,4 +18,4 @@ api.add_resource(Flush, '/api/v1/flush/')
 api.add_resource(Containers, '/api/v1/containers/')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=8080, debug=True)
