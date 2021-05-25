@@ -14,10 +14,12 @@ uses.
 
   Just follow upstream docs, but don't create a cluster just yet.
 
- 2) Make sure kind is able to effectively run nginx-ingress
+ 2) Configure kind and the environment
 
-  The default kind install won't expose the ingress port in localhost. You likely need a file like
-  this one (~/kind.yaml):
+  The default kind install won't expose the ingress port in localhost. It also wont allow you
+  to mount host files.
+
+  You likely need a file like this one (~/kind.yaml):
 
 ```
 kind: Cluster
@@ -34,7 +36,16 @@ nodes:
   - containerPort: 30001
     hostPort: 30001
     protocol: TCP
+  extraMounts:
+  - hostPath: /data/project/
+    containerPath: /data/project/
+  - hostPath: /etc/wmcs-project
+    containerPath: /etc/wmcs-project
+  - hostPath: /var/lib/sss/pipes/
+    containerPath: /var/lib/sss/pipes/
 ```
+
+  Also, run `mkdir -p /var/lib/sss/pipes/ /data/project/ ; echo "toolsbeta" > /etc/wmcs-project`.
 
  3) Bootstrap kind cluster
 
