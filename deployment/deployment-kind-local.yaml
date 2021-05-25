@@ -31,6 +31,8 @@ metadata:
   labels:
     app.kubernetes.io/name: ingress-nginx-jobs
     app.kubernetes.io/part-of: ingress-nginx-jobs
+data:
+  error-log-level: info
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -59,7 +61,7 @@ metadata:
     app.kubernetes.io/name: ingress-nginx-jobs
     app.kubernetes.io/part-of: ingress-nginx-jobs
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: jobs-api
@@ -117,7 +119,7 @@ rules:
       - update
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: jobs-api
@@ -161,7 +163,7 @@ rules:
     verbs:
       - get
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: jobs-api
@@ -178,7 +180,7 @@ subjects:
     name: jobs-api
     namespace: jobs-api
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jobs-api
@@ -237,10 +239,10 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: nginx-ingress-controller
-          image: docker-registry.tools.wmflabs.org/nginx-ingress-controller:0.25.1
+          image: docker-registry.tools.wmflabs.org/nginx-ingress-controller:v0.46.0
           args:
             - /nginx-ingress-controller
-            - --http-port=30001
+            - --https-port=30001
             - --configmap=$(POD_NAMESPACE)/nginx-configuration
             - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
             - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
@@ -255,7 +257,7 @@ spec:
               add:
                 - NET_BIND_SERVICE
             # www-data -> 33
-            runAsUser: 33
+            runAsUser: 101
           resources:
             requests:
               cpu: "0.5"
@@ -335,6 +337,8 @@ spec:
   type: ClusterIP
 ---
 # kubectl -n jobs-api create secret generic k8s-ca-secret --from-file=ca.crt=/etc/kubernetes/pki/ca.crt
+# - or from current .kube/config in case of kind:
+# kubectl config view --raw -o json | jq -r '.clusters[0].cluster."certificate-authority-data"' | tr -d '"' | base64 --decode | base64 -w0
 apiVersion: v1
 kind: Secret
 type: Opaque
@@ -342,7 +346,19 @@ metadata:
   name: k8s-ca-secret
   namespace: jobs-api
 data:
-  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRFNU1UQXlNekE1TlRRMU5Gb1hEVEk1TVRBeU1EQTVOVFExTkZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBT2xjCmJwK29lUlYrM1N2K3pYN1FsTVZSeVI2NnBPK1lPUTYwUVd0M0xxVUtRODRhQXpoVHJWek5NMmVxQ2IxWlZGUFMKTlRzczBwMTFUMUsrQzdVSndBRkFmOHV1RTlGNjFkVHpSMnNuT2ZmTUdDalZVT0txZEJucDNaTUlDMDhGOVlsagpndWc2bXQ5L1RFRGNML2RETDZpOEtQS1VmSC96cXdvUkpBUjVOUDVMelVPYVBrMzJxaUJqYjQ2UWVyZ3o3Z2VHCjQxOHRjTnc5aGsrZFBWMTdUdFRkUEg4NGQ5TlFaMnpDWGp5SnhaNnNWZlE0SDcyWml1cUFVbmx2UVJFTEs1c2YKR2JSYUpWWTk0U1J5K3IwenF0L2ptbjloNW1SckcxMW9Lb2w1ZnRZWGtyTHo2MWJDclltVFVHQjd4Q3JyL1lLUApVMmlqdnhQRnF1Y1Q2Q2trVjkwQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFEaTlwOEgwS3pJdlo5VWl1MXd0S3E5NXdiM3cKK1BUTk9ldDVRK0ZzdmRrY1RacHpmbU0xNGZsWDhPQS8zd2RLK0tPcGhSWU15c0lyTE5yQ3k0REhrUnhHaElJbAo3RDZPeDgvOUFUb0VhVXJ1a1FKMWJORWR0Q2ZicHBWYUlFYW9zYVJuZW9FdDgwREZWRUJqN1lWbDlISjlvODhRCjZXQXFQQnRPdVJ5ZDRKVDgrdjlQZU40RGlKejNQaTczRHdwYW9yb2U0aWdaUEtuK0FRS1Q3VURtWjBaNXR1RXoKOW9ieklRMzNObjdOZENpZEdTVUdGWFJOOUVPaUJNYlR6ai9VVFFnbDd3RWpXTGZXY0k0Y3MxNzhBV1pLYlIzbwp3U2R0OERSVlhlbTg0NnpYc0ZVb2tTQ2RWOGlmRmFzeTM0Zjd1enFoT01oN1UrRVdKdkFvakVXRUJaWT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM1ekNDQWMrZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJeE1EVXhPVEV6TWpZME0xb1hEVE14TURVeE56RXpNalkwTTFvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTEN1CkxpQWtCNmd1Nzl6NnRmYjRKR2F5QmN3NC9RLzVSSUxVdlVVM2hxZVY4VEhJWHVWRk5CNmdWRkxJSWZSbzNjcnYKUlE4eEhwa2pDTWh0MThVNnh2SUN3bHp6M214Z04vd0xPTHZ6Wm5ZbFJrNkJSdzF5bjB2bEhmcDFMWCtVWlUyMQp3N201THl6L1plbFkzeHNQWDExZ3RUSlhPQXFxT1VUNllnMzljd1ZtYVkrSGV1UmY2dG05Q2VtNGlocGtDcENkCjNKUGZrZVJVaVNmQkcxUEVoU2RrSHFabkxDUHhrZzY3RDNJWXpZZkJGTTVDWWQ2U1ZJVU9JalBjRSs1TUVNWFYKZzdNYkppQkV3bVVJQlI1a3ozM3B5WUpMTHZ5RmpFZUZWYUh0OXRVZy83UGtDalc3TW0zSUFvekVxZFhudXZMWQpidUZsdG1rQTVIc2R3OFZGN0swQ0F3RUFBYU5DTUVBd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZGVHlEYk1jNS9wSnNVM3g0QUduTjJqbHBCOXpNQTBHQ1NxR1NJYjMKRFFFQkN3VUFBNElCQVFCZEVXeHpGMTJIS0lWdUt0Qzk1MFU1cVB0QWczbk8vNWYrdGVkYnBQQ2NuYmhsY1Y4MQpESFJyVVQ4aDA5c2ExWm8wOTRXQjRvcVBkM1E5REZxZEV3WHNEUlBNVDlLaVhhRG4yQUhuTitmYi9tOE53Y2NhCldESHB6K3JkYm9RYlBpYnllVDlRamtidHpLcENHSHdNdGFUb1ovSUJOK1RGeTgwdS9xQ3hmZEpyTmY4UC81QnIKYXRVZW9TRDZYckZLekJSU1BONmNIdE0rdFZranVySEpHd0tUdDk4M09ZOHJoWm90a1pNUEtVOHRvd3NxZnR6SApYTklJMmtMZHdOSzY5c1hKc3ZTV3JYT21hUDRVMGszaWtzV2RlVUM0WUMrbyt1dGZ2NFluV2ppUFIxc1YzM0w3CndIa0tteitCcUJvT1pxWlRlMTFXbGRCVUxkSEEyL3g3R2RPUQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+---
+# generated using modules/kubeadm/files/admin_scripts/wmcs-k8s-get-cert.sh jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
+# and then kubectl -n jobs-api create secret tls jobs-api-server-cert --key /tmp/xxx/server-key.pem --cert /tmp/xxx/server-cert.pem
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: jobs-api-server-cert
+  namespace: jobs-api
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVIekNDQXdlZ0F3SUJBZ0lSQVBnM0tIbnFnTUVPYXA1SnhleTl3TkV3RFFZSktvWklodmNOQVFFTEJRQXcKRlRFVE1CRUdBMVVFQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TVRBMU1qUXhOak00TVRsYUZ3MHlNakExTWpReApOak00TVRsYU1EUXhNakF3QmdOVkJBTVRLV3B2WW5NdWMzWmpMblJ2YjJ4elltVjBZUzVsY1dsaFpERXVkMmxyCmFXMWxaR2xoTG1Oc2IzVmtNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXpUN2kKYzVLalN6alBKelp3c1BsU3J6bGpxS0JMa2Q1bzlWbk9ZS3gxNm1lakV3S0xNMTh4UWI3bEY1U0lIWkxnbVZsaQo4TTBNVWhVRHVwV2dLME85WndWU1ZVT3REak9xbmsvTlJLYmFwOE1Ba01QZEpOc081ZDVqSUYvd3hZWHE5VUtoCmxXRW50cmg4R255Wlh6RFg1Ym9sTmVGQmtXd3BCcnBDaWl5c3MxdE1iTWg0d1JNMFZlZmR5M2FzRHNZS0tzcXMKL1Y4dGx2cXpkSzd3OG1VRERjcmNrZXRMSXZRQTl6OUYxQmNZZ1EvZnhucHRxRzQyR1RGeDd0UjlSUEpaeURkUwo0b3BCS2Q5cjJUZDhvMXdOb2xCb1JScDF2VmR4bnBsRFJncTNoK0VpaXlzNkxBN0ZPcEFXc2lQejFIM1M1dUxECjFUdlpPUDl0WGZqQzhhT0NRd0lEQVFBQm80SUJTVENDQVVVd0RnWURWUjBQQVFIL0JBUURBZ1dnTUIwR0ExVWQKSlFRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFNQmdOVkhSTUJBZjhFQWpBQU1COEdBMVVkSXdRWQpNQmFBRkZUeURiTWM1L3BKc1UzeDRBR25OMmpscEI5ek1JSGtCZ05WSFJFRWdkd3dnZG1DS1dwdlluTXVjM1pqCkxuUnZiMnh6WW1WMFlTNWxjV2xoWkRFdWQybHJhVzFsWkdsaExtTnNiM1ZrZ2xOcWIySnpMbk4yWXk1MGIyOXMKYzJKbGRHRXVaWEZwWVdReExuZHBhMmx0WldScFlTNWpiRzkxWkM1cWIySnpMbk4yWXk1MGIyOXNjMkpsZEdFdQpaWEZwWVdReExuZHBhMmx0WldScFlTNWpiRzkxWklKWGFtOWljeTV6ZG1NdWRHOXZiSE5pWlhSaExtVnhhV0ZrCk1TNTNhV3RwYldWa2FXRXVZMnh2ZFdRdWFtOWljeTV6ZG1NdWRHOXZiSE5pWlhSaExtVnhhV0ZrTVM1M2FXdHAKYldWa2FXRXVZMnh2ZFdRdWMzWmpNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUE3UFRZUnphUk41aUw1a0huTQplS1k3V25CYTRkU3BlMk8xL3E3MG5yYXYrZldtWGp0OS9oZW54WXFueERMTk1kM016VkF6a1Z5VzhHcjlUTEtrCkljbk01Zm1EdzZ1WlY3N0EvU3ZmWmxCUk1tN2N2L3ltU0xodnRDbGxldnhjTWV3T2dQd0kwdjQxb1ZlMTZCa00KUUVqWGZ0bHNUNWVwRXp2NTZBRlZtaDRYZkRGNWJWVGI5TVdaSnBveUUxNi8vQm82a0NwUjRhcXcvM2dQYUp2QwpxWUNtd2RnSGJ4aktRcmw2SU5CcVNqKzllbnVQUFkyZHZWMndRVUV5RENKSFFjWHQzS3lNeHFGQzFsaG9wTkkvCisyeFNZU21EU1dDYTdRNGJjdFhVejBpaTA4andGS0drQlNnTDJzcHM1S29jRWRxK2VpQUlEQXJ2SVVUZnFmYzEKN0htbQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBelQ3aWM1S2pTempQSnpad3NQbFNyemxqcUtCTGtkNW85Vm5PWUt4MTZtZWpFd0tMCk0xOHhRYjdsRjVTSUhaTGdtVmxpOE0wTVVoVUR1cFdnSzBPOVp3VlNWVU90RGpPcW5rL05SS2JhcDhNQWtNUGQKSk5zTzVkNWpJRi93eFlYcTlVS2hsV0VudHJoOEdueVpYekRYNWJvbE5lRkJrV3dwQnJwQ2lpeXNzMXRNYk1oNAp3Uk0wVmVmZHkzYXNEc1lLS3Nxcy9WOHRsdnF6ZEs3dzhtVUREY3Jja2V0TEl2UUE5ejlGMUJjWWdRL2Z4bnB0CnFHNDJHVEZ4N3RSOVJQSlp5RGRTNG9wQktkOXIyVGQ4bzF3Tm9sQm9SUnAxdlZkeG5wbERSZ3EzaCtFaWl5czYKTEE3Rk9wQVdzaVB6MUgzUzV1TEQxVHZaT1A5dFhmakM4YU9DUXdJREFRQUJBb0lCQVFESWZxbVA1S3NIakZNdwpKd29tbHllaWJCbGlYRlAyQnFIWkt3VmpncFVkaW1mTzVpazg0YnlvVU9aU0JwS0E4VDNlRDJlTGU0S1JuRjJzCkl3WDN2WkNEMXJyNjk4VlJuajhKcjBNQjBVeS9uTW9zb0dpaTNDck5lbFN6QjRXWUxwMjdRSC9BQU14ZXZoRGQKZnVJRUR4NllGeUxLWTJVOXZiN0dCNldBZk91bnQ4SFF3bVhFSHBuZGY5NU9iL0x0MWNQS0RFN3dDdXRtTENpcgpOMS9yNFdGZ2I5NHdhSy9ZTmFod3JCV0oxY2xiK0plSGczZE5KZThPRHcwNHg1ODVRMzZmM0l6ZFlHZTUrblUrCkIwN0RUQWJVcnVSTCtXRmxFSXNjUC9CUW9yV2dKbjMzN0RVVGV5WWJQZURUVUkrSFRhM0s5b3IwcHZHS29YMWwKSWZoWmFtV0JBb0dCQVA0dFY3V2NuZkJHWEN3N2pvc0dITkVxL2dZU3l4YjJLSkR3dXlSTjhFZmtMMjFmVjN0KwpuQW5DRm1xa0Y5TnFlNDlHYWVkdHRnbk04ZWQxMUVqeXNiUSsxMlRCNE9tanY2ZDRwZmxNTFlwSzdPUkNqSXdCCnI3bkxIenltS1g5NnFqM21qUk9RYjR4RHRwSHovenl1Y3JSUGV6cWFtUlBrVU1MMEdYTFNRSlJ4QW9HQkFNNjMKdEw4MnJNYk5yL1I5ODR0RDk3eFJwVHlFSTVrSDlWZ3VZUUF1YUZ5b0kzNUx0Y1I1VDZFeGRuQnB4aGRKbUhtagprOVVBbHJIWEU0NjZYbmFCVElnSFJsRzhtNURYS1hxcm1VaVFnenJsckdLTmoyazhRMkYzUk8rclhqb1NVUDBPCnlLMXlieFpUVlRVbGwvS3kwNXpLRjF5R3QybGVoZWtLSE44dk1jdnpBb0dCQU45NTFGVDhONnpxMzkyUUc1ckcKTEE0SDQ4SkpRY0NWZTBNOE5QNE5mSVpvN1A0WHhwM3d5cGFWekFuRTdxSFdUSDdESlJmeVVRdzY0akZrV3RvcwpiK3VQR09nZ3duUUpvZGRINzMzSjZYeGV0ZnRYTzZWWlVqeGpoN3BXU2NRb2dJZmVMZ21XZzB6cXVCbUpVczd5CmZpMWtlRzhsUUJQS09PdS9uS1Jra1oweEFvR0FjaGRNUi9qYU5VTlM2T01YSnZjVlpUZSt0ZjdNVXVya2k0M1YKZGE4blpIUmNXcGxZc2g2dVIyNHdTMnpscXZhd2svb25Ybmxic3IzZENucHNKb1hJZ285WlRVV0dxdE5HRG5GbApRWHFaSTBtZDhpcmxTeFM2cjdHUE42UmlkalNqeEhlRFpNOXk1bVNKODdKVEFkMlhFOE1xVDZQKzJNWVZySUFyClhUY0VDZWNDZ1lFQW0yRWpvTUVjeTNBSFgxUUVVc2NKKzJrSVVwUkQvYVpJbjMyNFBnRzlLNC82d2I3K2trWFgKTm1ud2hRUGJOS2MxUXhJNWxPbjFQaGYyRGVVQm1IOVp6NllrQzZOeTd0ekMzaXFUajlPWFRNWm9ncnNvNDZEQgp3cWEzQjI4L0tBZ2I3VVZEUWhTVU1FVXNZcjF6bFY3YjY3TW85NzVXK09aZ3l5Qklmb0JyTjdZPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
 ---
 # from https://kubernetes.github.io/ingress-nginx/examples/auth/client-certs/
 apiVersion: networking.k8s.io/v1beta1
@@ -363,6 +379,10 @@ metadata:
     # special ingress
     kubernetes.io/ingress.class: "jobs"
 spec:
+  tls:
+    - hosts:
+        - jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
+      secretName: jobs-api-server-cert
   rules:
   - host: jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
     http:
