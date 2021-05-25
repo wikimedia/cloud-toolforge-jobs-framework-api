@@ -45,8 +45,6 @@ nodes:
     containerPath: /var/lib/sss/pipes/
 ```
 
-  Also, run `mkdir -p /var/lib/sss/pipes/ /data/project/ ; echo "toolsbeta" > /etc/wmcs-project`.
-
  3) Bootstrap kind cluster
 
 ```
@@ -74,43 +72,35 @@ $ kubectl -n jobs-api create secret generic k8s-ca-secret --from-file=ca.crt=ca.
  5) Generate server TLS certs.
 
   This is the TLS cert that will be used by nginx-ingress in front of the jobs-framework-api.
-  We use this handy script from the wikimedia operations/puppet.git repo:
 
 ```
-$ modules/kubeadm/files/admin_scripts/wmcs-k8s-get-cert.sh jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
-/tmp/tmp.HALKayZVhf/server-cert.pem
-/tmp/tmp.HALKayZVhf/server-key.pem
+$ devel/k8s-get-cert.sh jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
+/tmp/tmp.HALKayZVhf/k8s-cert.pem
+/tmp/tmp.HALKayZVhf/k8s-key.pem
 ```
 
   The string produced by the next command needs to be added to the `jobs-api-server-cert` Secret in
   the `deployment/deployment-kind-local.yaml` file.
 
 ```
-$ echo -n "tls.crt: " ; base64 -w0 /tmp/tmp.HALKayZVhf/server-cert.pem ; echo
-$ echo -n "tls.key: " ; base64 -w0 /tmp/tmp.HALKayZVhf/server-key.pem ; echo
+$ echo -n "tls.crt: " ; base64 -w0 /tmp/tmp.HALKayZVhf/k8s-cert.pem ; echo
+$ echo -n "tls.key: " ; base64 -w0 /tmp/tmp.HALKayZVhf/k8s-key.pem ; echo
 ```
 
   If in a later stage, once the `jobs-api` namespace exists, you can get this secret injected into
   kubrenetes with:
 
 ```
-$ kubectl -n jobs-api create secret tls jobs-api-server-cert --key /tmp/xxx/server-key.pem --cert /tmp/xxx/server-cert.pem
+$ kubectl -n jobs-api create secret tls jobs-api-server-cert --key /tmp/xxx/k8s-key.pem --cert /tmp/xxx/k8s-cert.pem
 ```
 
- 6) Generate a `test` user TLS cert.
+ 6) Setup fake user `test`, and the rest of the environment.
 
   In Toolforge kubernetes proper, this would be done by maintain-kubeusers.
 
-  We use this handy script from the wikimedia operations/puppet.git repo:
-
 ```
-$ modules/kubeadm/files/admin_scripts/wmcs-k8s-get-cert.sh test
-/tmp/tmp.HALKayZVhf/server-cert.pem
-/tmp/tmp.HALKayZVhf/server-key.pem
-$ mv /tmp/tmp.HALKayZVhf/server-cert.pem test-client-cert.pem
-$ mv /tmp/tmp.HALKayZVhf/server-key.pem test-client-key.pem
+$ devel/setup.sh
 ```
-  These are the certs that we will use for auth against jobs-framework-api.
 
  7) Build jobs-framework-api docker image
 
@@ -136,7 +126,11 @@ $ kubectl apply -f deployment/deployment-kind-local.yaml
  10) At this point, hopefully, it should work:
 
 ```
-$ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers/ -H "Host:jobs.svc.toolsbeta.eqiad1.wikimedia.cloud" --cert test-client-cert.pem --key test-client-key.pem -v --cacert ca.crt  --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1
+$ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers/ \
+  -H "Host:jobs.svc.toolsbeta.eqiad1.wikimedia.cloud" \
+  --cert /data/project/test/.toolskube/client.crt \
+  --key /data/project/test/.toolskube/client.key \
+  --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1
 ```
 
  11) Development iteration:

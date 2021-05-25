@@ -1,3 +1,4 @@
+from tjf.user import User
 from flask_restful import Resource, Api
 
 # We could maintain this harcoded list by hand, similar to what we do for tools-webservices
@@ -17,4 +18,9 @@ def validate_container_type(type):
 
 class Containers(Resource):
     def get(self):
+        try:
+            user = User.from_request()
+        except Exception as e:
+            return f"Exception: {e}", 401
+
         return AVAILABLE_CONTAINERS

@@ -2,6 +2,7 @@ from common.k8sclient import KubectlClient
 from tjf.job import Job
 from flask_restful import Resource, Api, reqparse
 from tjf.containers import validate_container_type
+from tjf.user import User
 
 # arguments that the API understands
 parser = reqparse.RequestParser()
@@ -13,6 +14,11 @@ parser.add_argument('name')
 
 class Run(Resource):
     def post(self):
+        try:
+            user = User.from_request()
+        except Exception as e:
+            return f"Exception: {e}", 401
+
         args = parser.parse_args()
 
         # TODO: figure this out from the client TLS cert

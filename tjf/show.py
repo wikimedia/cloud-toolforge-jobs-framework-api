@@ -3,6 +3,7 @@ from common.k8sclient import KubectlClient
 from tjf.job import Job
 import tjf.utils as utils
 import yaml
+from tjf.user import User
 
 def find_job(dict, name):
     # multiple jobs defined?
@@ -20,6 +21,11 @@ def find_job(dict, name):
 
 class Show(Resource):
     def get(self, name):
+        try:
+            user = User.from_request()
+        except Exception as e:
+            return f"Exception: {e}", 401
+
         # TODO: figure this out from the client TLS cert
         ns = "tools-test"
         username = "test"

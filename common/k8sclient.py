@@ -35,7 +35,7 @@ class K8sClient(object):
         "pods": "v1",
         "replicasets": "apps/v1",
         "services": "v1",
-        "job": "batch/v1",
+        "jobs": "batch/v1",
     }
 
     @classmethod
