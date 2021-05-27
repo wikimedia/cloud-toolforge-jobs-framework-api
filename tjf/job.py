@@ -1,9 +1,9 @@
 import tjf.utils as utils
 
 class Job():
-    def __init__(self, cmd, type, jobname, ns, username, status):
+    def __init__(self, cmd, image, jobname, ns, username, status):
         self.cmd = cmd
-        self.type = type
+        self.image = image
         self.jobname = jobname
         self.ns = ns
         self.username = username
@@ -20,7 +20,7 @@ class Job():
 
         spec = utils.dict_get_object(job_definition, "spec")
         cmd = spec["template"]["spec"]["containers"][0]["command"][0]
-        type = spec["template"]["spec"]["containers"][0]["image"]
+        image = spec["template"]["spec"]["containers"][0]["image"]
 
         status = "unknown"
         status_dict = utils.dict_get_object(job_definition, "status")
@@ -29,7 +29,7 @@ class Job():
                 if condition["type"] == "Failed":
                     status = "failed"
 
-        return Job(cmd, type, jobname, namespace, user, status)
+        return Job(cmd, image, jobname, namespace, user, status)
 
 
     def get_k8s_object(self):
@@ -48,7 +48,7 @@ class Job():
                         "containers": [
                             {
                                 "name": self.jobname,
-                                "image": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+                                "image": self.image,
                                 "workingDir": "/data/project/{}".format(self.username),
                                 "command": [ self.cmd, ],
                                 "env": [
@@ -84,7 +84,7 @@ class Job():
         return {
             "name": self.jobname,
             "cmd": self.cmd,
-            "type": self.type,
+            "image": self.image,
             "user": self.username,
             "namespace": self.ns,
             "status": self.status,

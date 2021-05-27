@@ -8,8 +8,11 @@ from common.k8sclient import K8sClient
 class User:
     def __init__(self, name):
         self.name = name
+        self.namespace = f"tool-{self.name}"
+
         # TODO: fetch this from LDAP instead?
         self.home = f"/data/project/{name}"
+
         self.kubeconfig_path = os.path.join(self.home, ".kube", "config")
         self.validate_kubeconfig()
         self.kapi = K8sClient.from_file(filename=self.kubeconfig_path)

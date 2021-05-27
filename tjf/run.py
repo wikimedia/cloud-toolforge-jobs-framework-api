@@ -1,16 +1,19 @@
 from common.k8sclient import KubectlClient
 from tjf.job import Job
 from flask_restful import Resource, Api, reqparse
-from tjf.containers import validate_container_type
+from tjf.containers import container_validate, container_get_image
 from tjf.user import User
+import yaml
+import sys
 
 # arguments that the API understands
 parser = reqparse.RequestParser()
-parser.add_argument('cmd')
-parser.add_argument('type')
-parser.add_argument('schedule')
-parser.add_argument('continuous')
-parser.add_argument('name')
+parser.add_argument("cmd")
+parser.add_argument("imagename")
+parser.add_argument("schedule")
+parser.add_argument("continuous")
+parser.add_argument("name")
+
 
 class Run(Resource):
     def post(self):
@@ -21,16 +24,19 @@ class Run(Resource):
 
         args = parser.parse_args()
 
-        # TODO: figure this out from the client TLS cert
-        ns = "tool-test"
-        username = "test"
-        kubeconfig_file = "/data/project/test/.kube/config"
-
-        if not validate_container_type(args.type):
-            return "Invalid container type", 500
+        if not container_validate(args.imagename):
+            return "Invalid container type", 400
 
         # TODO: add support for schedule & continuous
-        job = Job(args.cmd, args.type, args.name, ns, username, status=None)
+        job = Job(
+            args.cmd,
+            container_get_image(args.imagename),
+            args.name,
+            user.namespace,
+            user.name,
+            status=None,
+        )
 
-        # TODO: replace this with proper k8sclient usage instead of kubectl
-        return KubectlClient.kubectl("apply", job.get_k8s_object())
+        # TODO: add special error handling for 409: confict for URL
+        # That means there is already a job with the same name
+        return user.kapi.create_object("jobs", job.get_k8s_object())

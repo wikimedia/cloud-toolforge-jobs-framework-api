@@ -9,8 +9,7 @@ class Delete(Resource):
         except Exception as e:
             return f"Exception: {e}", 401
 
-        # TODO: use k8s API
         # TODO: proper error reporting, validation, etc
         # TODO: only delete objects create by this framework, use labels
         # TODO: support for cronjobs and replicationcontrollers
-        return KubectlClient.kubectl("delete job {}".format(name), content=None)
+        return user.kapi.delete_objects("jobs", selector={"job_name": name})

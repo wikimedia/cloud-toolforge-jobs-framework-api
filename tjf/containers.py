@@ -3,15 +3,26 @@ from flask_restful import Resource, Api
 
 # We could maintain this harcoded list by hand, similar to what we do for tools-webservices
 AVAILABLE_CONTAINERS = [
-    {"type": "toolforge-stretch-sssd"},
-    {"type": "toolforge-buster-sssd"},
-    {"type": "toolforge-bullseye-sssd"},
+    {
+        "name": "tf-buster",
+        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+    },
+    {
+        "name": "tf-buster-std",
+        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+    },
 ]
 
 
-def validate_container_type(type):
-    for container_type in AVAILABLE_CONTAINERS:
-        if container_type.get("type") == type:
+def container_get_image(name):
+    for container in AVAILABLE_CONTAINERS:
+        if container.get("name") == name:
+            return container.get("type")
+
+
+def container_validate(name):
+    for container in AVAILABLE_CONTAINERS:
+        if container.get("name") == name:
             return True
     return False
 

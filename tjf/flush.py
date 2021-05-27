@@ -9,9 +9,9 @@ class Flush(Resource):
         except Exception as e:
             return f"Exception: {e}", 401
 
-        # TODO: figure out namespace from client TLS cert
-        # TODO: replace kubectl call with proper k8sclient usage
-        # TODO: use labels to only delete jobs created by this framework
-        KubectlClient.kubectl("delete job --all", content=None)
-        KubectlClient.kubectl("delete cronjob --all", content=None)
-        KubectlClient.kubectl("delete replicationcontroller --all", content=None)
+        # TODO: use labels to only delete stuff created by this framework
+        user.kapi.delete_objects("jobs")
+        user.kapi.delete_objects("cronjobs")
+        user.kapi.delete_objects("replicationcontrollers")
+
+        return "", 200

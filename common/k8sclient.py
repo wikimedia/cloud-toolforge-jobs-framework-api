@@ -4,6 +4,7 @@
 import os
 import subprocess
 import requests
+import urllib3
 import yaml
 
 class KubectlClient():
@@ -25,6 +26,9 @@ class KubectlClient():
         if r.stdout:
             return r.stdout.decode("utf-8")
 
+# T253412: Disable warnings about unverifed TLS certs when talking to the
+# Kubernetes API endpoint
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class K8sClient(object):
     """Kubernetes API client."""
@@ -36,6 +40,8 @@ class K8sClient(object):
         "replicasets": "apps/v1",
         "services": "v1",
         "jobs": "batch/v1",
+        "cronjobs": "batch/v1beta1",
+        "replicationcontrollers": "v1",
     }
 
     @classmethod
