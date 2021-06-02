@@ -7,7 +7,8 @@ import requests
 import urllib3
 import yaml
 
-class KubectlClient():
+
+class KubectlClient:
     def kubectl(args, content):
         cmd = "kubectl {}".format(args)
         if content:
@@ -26,9 +27,11 @@ class KubectlClient():
         if r.stdout:
             return r.stdout.decode("utf-8")
 
+
 # T253412: Disable warnings about unverifed TLS certs when talking to the
 # Kubernetes API endpoint
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 class K8sClient(object):
     """Kubernetes API client."""
@@ -58,9 +61,7 @@ class K8sClient(object):
         """Constructor."""
         self.config = config
         self.timeout = timeout
-        self.context = self._find_cfg_obj(
-            "contexts", config["current-context"]
-        )
+        self.context = self._find_cfg_obj("contexts", config["current-context"])
         self.cluster = self._find_cfg_obj("clusters", self.context["cluster"])
         self.server = self.cluster["server"]
         self.namespace = self.context["namespace"]
@@ -80,9 +81,7 @@ class K8sClient(object):
         for obj in self.config[kind]:
             if obj["name"] == name:
                 return obj[kind[:-1]]
-        raise KeyError(
-            "Key {} not found in {} section of config".format(name, kind)
-        )
+        raise KeyError("Key {} not found in {} section of config".format(name, kind))
 
     def _make_kwargs(self, url, **kwargs):
         """Setup kwargs for a Requests request."""

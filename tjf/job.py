@@ -1,6 +1,7 @@
 import tjf.utils as utils
 
-class Job():
+
+class Job:
     def __init__(self, cmd, image, jobname, ns, username, status):
         self.cmd = cmd
         self.image = image
@@ -16,7 +17,7 @@ class Job():
         metadata = utils.dict_get_object(job_definition, "metadata")
         jobname = metadata["name"]
         namespace = metadata["namespace"]
-        user = ''.join(namespace.split('-')[1:])
+        user = "".join(namespace.split("-")[1:])
 
         spec = utils.dict_get_object(job_definition, "spec")
         cmd = spec["template"]["spec"]["containers"][0]["command"][0]
@@ -30,7 +31,6 @@ class Job():
                     status = "failed"
 
         return Job(cmd, image, jobname, namespace, user, status)
-
 
     def get_k8s_object(self):
         return {
@@ -50,11 +50,13 @@ class Job():
                                 "name": self.jobname,
                                 "image": self.image,
                                 "workingDir": "/data/project/{}".format(self.username),
-                                "command": [ self.cmd, ],
+                                "command": [
+                                    self.cmd,
+                                ],
                                 "env": [
                                     {
-                                      "name": "HOME",
-                                      "value": "/data/project/{}".format(self.username),
+                                        "name": "HOME",
+                                        "value": "/data/project/{}".format(self.username),
                                     },
                                 ],
                                 "volumeMounts": [
@@ -73,12 +75,11 @@ class Job():
                                     "type": "Directory",
                                 },
                             }
-                        ]
+                        ],
                     },
                 },
-            }
+            },
         }
-
 
     def get_api_object(self):
         return {

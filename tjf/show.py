@@ -5,10 +5,12 @@ import tjf.utils as utils
 import yaml
 from tjf.user import User
 
+
 def find_job(list, name):
     for job in list:
         if job.jobname == name:
             return job
+
 
 class Show(Resource):
     def get(self, name):
