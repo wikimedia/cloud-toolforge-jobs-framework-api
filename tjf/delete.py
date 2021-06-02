@@ -1,5 +1,4 @@
 from flask_restful import Resource, Api
-from common.k8sclient import KubectlClient
 from tjf.user import User
 
 

@@ -1,4 +1,3 @@
-from common.k8sclient import KubectlClient
 from tjf.job import Job
 from flask_restful import Resource, Api, reqparse
 from tjf.containers import container_validate, container_get_image

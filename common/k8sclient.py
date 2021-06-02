@@ -2,30 +2,9 @@
 # copyright TBD
 
 import os
-import subprocess
 import requests
 import urllib3
 import yaml
-
-
-class KubectlClient:
-    def kubectl(args, content):
-        cmd = "kubectl {}".format(args)
-        if content:
-            file = "kubectl_data_file.yaml"
-            if os.path.exists(file):
-                os.remove(file)
-            with open(file, "w") as filehandler:
-                yaml.dump(content, filehandler)
-            cmd = cmd + " -f {}".format(file)
-
-        print(cmd)
-        r = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-        if r.returncode != 0:
-            print("E: command failed {}".format(cmd))
-
-        if r.stdout:
-            return r.stdout.decode("utf-8")
 
 
 # T253412: Disable warnings about unverifed TLS certs when talking to the
