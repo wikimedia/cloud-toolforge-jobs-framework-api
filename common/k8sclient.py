@@ -22,7 +22,7 @@ class K8sClient(object):
         "replicasets": "apps/v1",
         "services": "v1",
         "jobs": "batch/v1",
-        "cronjobs": "batch/v1beta1",
+        "cronjobs": "batch/v1",
         "replicationcontrollers": "v1",
     }
 

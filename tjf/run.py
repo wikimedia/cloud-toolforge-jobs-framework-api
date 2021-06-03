@@ -26,16 +26,17 @@ class Run(Resource):
         if not container_validate(args.imagename):
             return "Invalid container type", 400
 
-        # TODO: add support for schedule & continuous
+        # TODO: add support for continuous jobs
         job = Job(
-            args.cmd,
-            container_get_image(args.imagename),
-            args.name,
-            user.namespace,
-            user.name,
+            cmd=args.cmd,
+            image=container_get_image(args.imagename),
+            jobname=args.name,
+            ns=user.namespace,
+            username=user.name,
+            schedule=args.schedule,
             status=None,
         )
 
         # TODO: add special error handling for 409: confict for URL
         # That means there is already a job with the same name
-        return user.kapi.create_object("jobs", job.get_k8s_object())
+        return user.kapi.create_object(job.k8s_type, job.get_k8s_object())

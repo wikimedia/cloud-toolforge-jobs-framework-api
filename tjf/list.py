@@ -13,6 +13,9 @@ class List(Resource):
 
         job_list = []
         for job in user.kapi.get_objects("jobs"):
-            job_list.append(Job.from_k8s_object(job))
+            job_list.append(Job.from_job_k8s_object(job))
+
+        for job in user.kapi.get_objects("cronjobs"):
+            job_list.append(Job.from_cronjob_k8s_object(job))
 
         return [j.get_api_object() for j in job_list]
