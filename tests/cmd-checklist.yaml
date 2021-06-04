@@ -1,0 +1,327 @@
+---
+- envvars:
+    - CURL_URL: "https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1"
+      CURL_HDR: "Host:jobs.svc.toolsbeta.eqiad1.wikimedia.cloud"
+      CURL_ARGS: "--cert /data/project/test/.toolskube/client.crt --key /data/project/test/.toolskube/client.key --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1 -k"
+      JOBNAME: "normaljob"
+      CRONJOBNAME: "cronjob"
+      IMG: "tf-buster-std"
+      SLEEP: "3"
+---
+- name: "list containers"
+  tests:
+    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q name
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q type
+      retcode: 0
+      stdout: ""
+      stderr: ""
+
+- name: "flush everything"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\"\n"
+      stderr: ""
+
+#
+# normal job
+#
+
+- name: "create normal job"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "create duplicated normal job should fail"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -f
+      # the server returns 500 (because k8s returns 409) and curl returns 22
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+- name: "show normal job"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       {
+           "name": "normaljob",
+           "cmd": "true",
+           "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+           "user": "test",
+           "namespace": "tool-test",
+           "status": "unknown"
+       }
+      stderr: ""
+
+- name: "list jobs, only normal job is present"
+  tests:
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       [
+           {
+               "name": "normaljob",
+               "cmd": "true",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "user": "test",
+               "namespace": "tool-test",
+               "status": "unknown"
+           }
+       ]
+      stderr: ""
+
+- name: "delete normal job"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "show normal job should fail because we just deleted it"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} -f
+      # this means the server returned 404
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+- name: "create 2 normal jobs and delete one by one"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}2" -d "imagename=${IMG}" -d "cmd=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+      retcode: 0
+      stdout: "2\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+      retcode: 0
+      stdout: "1\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+
+#
+# cronjobs
+#
+
+- name: "create cronjob"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/10 * * * *"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "create duplicated cronjob should fail"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/10 * * * *" -f
+      # the server returns 500 (because k8s returns 409) and curl returns 22
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+- name: "show cronjob"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       {
+           "name": "cronjob",
+           "cmd": "true",
+           "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+           "user": "test",
+           "namespace": "tool-test",
+           "status": "unknown",
+           "schedule": "*/10 * * * *"
+       }
+      stderr: ""
+
+- name: "list jobs, only cronjob is present"
+  tests:
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       [
+           {
+               "name": "cronjob",
+               "cmd": "true",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "user": "test",
+               "namespace": "tool-test",
+               "status": "unknown",
+               "schedule": "*/10 * * * *"
+           }
+       ]
+      stderr: ""
+
+- name: "delete cronjob job"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "show cronjob should fail because we just deleted it"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} -f
+      # this means the server returned 404
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+- name: "create 2 cronjobs jobs and delete one by one"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/10 * * * *"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}2" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/9 * * * *"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "schedule" | wc -l
+      retcode: 0
+      stdout: "2\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "schedule" | wc -l
+      retcode: 0
+      stdout: "1\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+
+#
+# mixed cronjob/normaljob
+#
+
+- name: "create both a cronjob and a normaljob"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "list jobs, both cronjob and normaljob are present"
+  tests:
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       [
+           {
+               "name": "normaljob",
+               "cmd": "true",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "user": "test",
+               "namespace": "tool-test",
+               "status": "unknown"
+           },
+           {
+               "name": "cronjob",
+               "cmd": "true",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "user": "test",
+               "namespace": "tool-test",
+               "status": "unknown",
+               "schedule": "*/5 * * * *"
+           }
+       ]
+      stderr: ""
+
+- name: "delete cronjob, make sure it doesn't remove the other"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q name
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    # create again the cronjob to do the reverse test
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "delete normaljob, make sure it doesn't remove the other"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q name
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    # create again the normaljob to continue with tests
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "flush operation cleans both normaljobs and cronjobs"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\"\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "[]\n"
+      stderr: ""
