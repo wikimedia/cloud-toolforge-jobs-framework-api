@@ -21,6 +21,7 @@ class Job:
     @classmethod
     def get_labels(self, jobname, username):
         return {
+            "toolforge": "tool",
             "app.kubernetes.io/component": "tool",
             "app.kubernetes.io/version": "1",
             "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
