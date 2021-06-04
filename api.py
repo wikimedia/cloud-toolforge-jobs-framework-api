@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Resource, Api, abort
+from flask_restful import Api
 from tjf.run import Run
 from tjf.show import Show
 from tjf.list import List

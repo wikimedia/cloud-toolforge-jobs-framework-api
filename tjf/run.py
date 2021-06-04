@@ -1,9 +1,7 @@
 from tjf.job import Job
-from flask_restful import Resource, Api, reqparse
+from flask_restful import Resource, reqparse
 from tjf.containers import container_validate, container_get_image
 from tjf.user import User
-import yaml
-import sys
 
 # arguments that the API understands
 parser = reqparse.RequestParser()

@@ -1,4 +1,4 @@
-from flask_restful import Resource, Api
+from flask_restful import Resource
 from tjf.user import User
 
 

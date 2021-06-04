@@ -1,7 +1,6 @@
 import os
 import yaml
 from flask import request
-from flask_restful import abort
 from common.k8sclient import K8sClient
 
 

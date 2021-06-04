@@ -13,7 +13,7 @@ class Job:
         self.status = status
         self.schedule = schedule
 
-        if self.schedule != None:
+        if self.schedule is not None:
             self.k8s_type = "cronjobs"
         else:
             self.k8s_type = "jobs"

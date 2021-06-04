@@ -1,5 +1,5 @@
 from tjf.user import User
-from flask_restful import Resource, Api
+from flask_restful import Resource
 
 # We could maintain this harcoded list by hand, similar to what we do for tools-webservices
 AVAILABLE_CONTAINERS = [
@@ -30,7 +30,7 @@ def container_validate(name):
 class Containers(Resource):
     def get(self):
         try:
-            user = User.from_request()
+            user = User.from_request()  # noqa:F841
         except Exception as e:
             return f"Exception: {e}", 401
 

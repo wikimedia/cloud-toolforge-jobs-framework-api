@@ -1,7 +1,5 @@
-from flask_restful import Resource, Api
+from flask_restful import Resource
 from tjf.job import Job
-import tjf.utils as utils
-import yaml
 from tjf.user import User
 
 
