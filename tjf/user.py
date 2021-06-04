@@ -50,4 +50,10 @@ class User:
         if header not in request.headers:
             raise Exception(f"missing '{header}' header")
 
-        return User(name=request.headers.get(header))
+        value = request.headers.get(header)
+        if not value.startswith("CN="):
+            raise Exception(f"missing CN= string in '{header}' header")
+
+        name = value.split("=")[1]
+
+        return User(name=name)
