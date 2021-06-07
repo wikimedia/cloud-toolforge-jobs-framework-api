@@ -1,3 +1,4 @@
+import requests
 from tjf.job import Job
 from flask_restful import Resource, reqparse
 from tjf.containers import container_validate, container_get_image
@@ -35,6 +36,15 @@ class Run(Resource):
             status=None,
         )
 
-        # TODO: add special error handling for 409: confict for URL
-        # That means there is already a job with the same name
-        return user.kapi.create_object(job.k8s_type, job.get_k8s_object())
+        try:
+            result = user.kapi.create_object(job.k8s_type, job.get_k8s_object())
+        except requests.exceptions.HTTPError as e:
+            # hope k8s doesn't change this behavior too often
+            if e.response.status_code == 409 or str(e).startswith(
+                "409 Client Error: Conflict for url"
+            ):
+                result = "HTTP 409: a job with the same name exists already", 409
+            else:
+                result = str(e), e.response.status_code
+
+        return result
