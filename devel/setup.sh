@@ -39,7 +39,7 @@ apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: ${K8S_CA}
-    server: https://127.0.0.1:43629
+    server: https://kind-control-plane:6443
   name: kind-kind
 contexts:
 - context:
