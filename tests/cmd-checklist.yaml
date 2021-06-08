@@ -5,6 +5,7 @@
       CURL_ARGS: "--cert /data/project/test/.toolskube/client.crt --key /data/project/test/.toolskube/client.key --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1 -k"
       JOBNAME: "normaljob"
       CRONJOBNAME: "cronjob"
+      CONTJOBNAME: "continuousjob"
       IMG: "tf-buster-std"
       SLEEP: "3"
 ---
@@ -231,10 +232,112 @@
       stderr: ""
 
 #
-# mixed cronjob/normaljob
+# continuous job
 #
 
-- name: "create both a cronjob and a normaljob"
+- name: "create continuous job"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "create duplicated continuous job should fail"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "\"HTTP 409: a job with the same name exists already\"\n"
+      stderr: ""
+
+- name: "show continuous job"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       {
+           "name": "continuousjob",
+           "cmd": "true",
+           "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+           "user": "test",
+           "namespace": "tool-test",
+           "status": "unknown",
+           "continuous": true
+       }
+      stderr: ""
+
+- name: "list jobs, only continuous job is present"
+  tests:
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: |
+       [
+           {
+               "name": "continuousjob",
+               "cmd": "true",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "user": "test",
+               "namespace": "tool-test",
+               "status": "unknown",
+               "continuous": true
+           }
+       ]
+      stderr: ""
+
+- name: "delete continuous job"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "show continuous job should fail because we just deleted it"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} -f
+      # this means the server returned 404
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+- name: "create 2 continuous jobs and delete one by one"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}2" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+      retcode: 0
+      stdout: "2\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+      retcode: 0
+      stdout: "1\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+
+#
+# mixed cronjob/normaljob/continuousjob
+#
+
+- name: "create all 3 types of jobs"
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
       retcode: 0
@@ -244,10 +347,14 @@
       retcode: 0
       stdout: "201\n"
       stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
 
-- name: "list jobs, both cronjob and normaljob are present"
+- name: "list jobs, all 3 types are present"
   tests:
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -269,11 +376,20 @@
                "namespace": "tool-test",
                "status": "unknown",
                "schedule": "*/5 * * * *"
+           },
+           {
+               "name": "continuousjob",
+               "cmd": "true",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "user": "test",
+               "namespace": "tool-test",
+               "status": "unknown",
+               "continuous": true
            }
        ]
       stderr: ""
 
-- name: "delete cronjob, make sure it doesn't remove the other"
+- name: "delete cronjob, make sure it doesn't remove the others"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -281,9 +397,9 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q name
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | wc -l
       retcode: 0
-      stdout: ""
+      stdout: "2\n"
       stderr: ""
     # create again the cronjob to do the reverse test
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
@@ -293,7 +409,7 @@
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
 
-- name: "delete normaljob, make sure it doesn't remove the other"
+- name: "delete normaljob, make sure it doesn't remove the others"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -301,9 +417,9 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q name
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | wc -l
       retcode: 0
-      stdout: ""
+      stdout: "2\n"
       stderr: ""
     # create again the normaljob to continue with tests
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=true"
@@ -313,7 +429,27 @@
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
 
-- name: "flush operation cleans both normaljobs and cronjobs"
+- name: "delete continuousjob, make sure it doesn't remove the others"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "null\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | wc -l
+      retcode: 0
+      stdout: "2\n"
+      stderr: ""
+    # create again the normaljob to continue with tests
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "flush operation all jobs"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0

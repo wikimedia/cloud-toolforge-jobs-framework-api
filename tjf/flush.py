@@ -12,6 +12,6 @@ class Flush(Resource):
         # TODO: use labels to only delete stuff created by this framework
         user.kapi.delete_objects("jobs")
         user.kapi.delete_objects("cronjobs")
-        user.kapi.delete_objects("replicationcontrollers")
+        user.kapi.delete_objects("deployments")
 
         return "", 200

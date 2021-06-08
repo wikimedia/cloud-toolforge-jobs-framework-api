@@ -9,7 +9,7 @@ parser = reqparse.RequestParser()
 parser.add_argument("cmd")
 parser.add_argument("imagename")
 parser.add_argument("schedule")
-parser.add_argument("continuous")
+parser.add_argument("continuous", type=bool, default=False)
 parser.add_argument("name")
 
 
@@ -34,6 +34,7 @@ class Run(Resource):
             username=user.name,
             schedule=args.schedule,
             status=None,
+            cont=args.continuous,
         )
 
         try:

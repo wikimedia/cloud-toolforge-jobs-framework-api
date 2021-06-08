@@ -2,7 +2,7 @@ import tjf.utils as utils
 
 
 class Job:
-    def __init__(self, cmd, image, jobname, ns, username, status, schedule):
+    def __init__(self, cmd, image, jobname, ns, username, status, schedule, cont):
         self.cmd = cmd
         self.image = image
         self.jobname = jobname
@@ -12,9 +12,12 @@ class Job:
             status = "unknown"
         self.status = status
         self.schedule = schedule
+        self.cont = cont
 
         if self.schedule is not None:
             self.k8s_type = "cronjobs"
+        elif self.cont is True:
+            self.k8s_type = "deployments"
         else:
             self.k8s_type = "jobs"
 
@@ -35,14 +38,14 @@ class Job:
             ["{k}={v}".format(k=k, v=v) for k, v in self.get_labels(jobname, username).items()]
         )
 
-    def _parse_k8s_object(self, object, jobspec, schedule):
+    def _parse_k8s_podtemplate(self, object, podspec, schedule, cont):
         metadata = utils.dict_get_object(object, "metadata")
         jobname = metadata["name"]
         namespace = metadata["namespace"]
         user = "".join(namespace.split("-")[1:])
 
-        cmd = jobspec["template"]["spec"]["containers"][0]["command"][0]
-        image = jobspec["template"]["spec"]["containers"][0]["image"]
+        cmd = podspec["template"]["spec"]["containers"][0]["command"][0]
+        image = podspec["template"]["spec"]["containers"][0]["image"]
 
         status = "unknown"
         status_dict = utils.dict_get_object(object, "status")
@@ -51,62 +54,63 @@ class Job:
                 if condition["type"] == "Failed":
                     status = "failed"
 
-        return Job(cmd, image, jobname, namespace, user, status, schedule=schedule)
+        return Job(cmd, image, jobname, namespace, user, status, schedule=schedule, cont=cont)
 
     @classmethod
     def from_cronjob_k8s_object(self, cronjob_definition):
         spec = utils.dict_get_object(cronjob_definition, "spec")
         schedule = spec["schedule"]
 
-        return self._parse_k8s_object(
-            self, object=cronjob_definition, jobspec=spec["jobTemplate"]["spec"], schedule=schedule
+        return self._parse_k8s_podtemplate(
+            self,
+            object=cronjob_definition,
+            podspec=spec["jobTemplate"]["spec"],
+            schedule=schedule,
+            cont=False,
+        )
+
+    @classmethod
+    def from_dp_k8s_object(self, deployment_definition):
+        podspec = utils.dict_get_object(deployment_definition, "spec")
+
+        return self._parse_k8s_podtemplate(
+            self, object=deployment_definition, podspec=podspec, schedule=None, cont=True
         )
 
     @classmethod
     def from_job_k8s_object(self, job_definition):
-        jobspec = utils.dict_get_object(job_definition, "spec")
+        podspec = utils.dict_get_object(job_definition, "spec")
 
-        return self._parse_k8s_object(self, object=job_definition, jobspec=jobspec, schedule=None)
+        return self._parse_k8s_podtemplate(
+            self, object=job_definition, podspec=podspec, schedule=None, cont=False
+        )
 
-    def _get_k8s_common_job_spec(self):
+    def _get_k8s_podtemplate(self, restartpolicy):
         return {
-            "backoffLimit": 3,
             "template": {
+                "metadata": {"labels": self.get_labels(self.jobname, self.username)},
                 "spec": {
-                    "restartPolicy": "Never",
+                    "restartPolicy": restartpolicy,
                     "containers": [
                         {
                             "name": self.jobname,
                             "image": self.image,
                             "workingDir": "/data/project/{}".format(self.username),
-                            "command": [
-                                self.cmd,
-                            ],
+                            "command": [self.cmd],
                             "env": [
-                                {
-                                    "name": "HOME",
-                                    "value": "/data/project/{}".format(self.username),
-                                },
+                                {"name": "HOME", "value": "/data/project/{}".format(self.username)}
                             ],
-                            "volumeMounts": [
-                                {
-                                    "mountPath": "/data/project",
-                                    "name": "home",
-                                },
-                            ],
-                        },
+                            "volumeMounts": [{"mountPath": "/data/project", "name": "home"}],
+                        }
                     ],
                     "volumes": [
                         {
                             "name": "home",
-                            "hostPath": {
-                                "path": "/data/project",
-                                "type": "Directory",
-                            },
+                            "hostPath": {"path": "/data/project", "type": "Directory"},
                         }
                     ],
                 },
-            },
+            }
         }
 
     def _get_k8s_cronjob_object(self):
@@ -120,11 +124,28 @@ class Job:
             },
             "spec": {
                 "schedule": self.schedule,
-                "jobTemplate": {
-                    "spec": self._get_k8s_common_job_spec(),
-                },
+                "jobTemplate": {"spec": self._get_k8s_podtemplate(restartpolicy="Never")},
             },
         }
+
+    def _get_k8s_deployment_object(self):
+        obj = {
+            "kind": "Deployment",
+            "apiVersion": "apps/v1",
+            "metadata": {
+                "name": self.jobname,
+                "namespace": self.ns,
+                "labels": self.get_labels(self.jobname, self.username),
+            },
+            "spec": self._get_k8s_podtemplate(restartpolicy="Always"),
+        }
+
+        obj["spec"]["replicas"] = 1
+        obj["spec"]["selector"] = {
+            "matchLabels": self.get_labels(self.jobname, self.username),
+        }
+
+        return obj
 
     def _get_k8s_job_object(self):
         return {
@@ -135,12 +156,15 @@ class Job:
                 "namespace": self.ns,
                 "labels": self.get_labels(self.jobname, self.username),
             },
-            "spec": self._get_k8s_common_job_spec(),
+            "spec": self._get_k8s_podtemplate(restartpolicy="Never"),
         }
 
     def get_k8s_object(self):
         if self.k8s_type == "cronjobs":
             return self._get_k8s_cronjob_object()
+
+        if self.k8s_type == "deployments":
+            return self._get_k8s_deployment_object()
 
         return self._get_k8s_job_object()
 
@@ -156,5 +180,8 @@ class Job:
 
         if self.schedule is not None:
             obj["schedule"] = self.schedule
+
+        if self.cont:
+            obj["continuous"] = True
 
         return obj

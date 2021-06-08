@@ -16,13 +16,15 @@ class Show(Resource):
         except Exception as e:
             return f"Exception: {e}", 401
 
-        # TODO: also get and search ReplicationController objects
         job_list = []
         for job in user.kapi.get_objects("jobs"):
             job_list.append(Job.from_job_k8s_object(job))
 
         for job in user.kapi.get_objects("cronjobs"):
             job_list.append(Job.from_cronjob_k8s_object(job))
+
+        for job in user.kapi.get_objects("deployments"):
+            job_list.append(Job.from_dp_k8s_object(job))
 
         job = find_job(job_list, name)
         # we found the job
