@@ -145,12 +145,16 @@ class Job:
         return self._get_k8s_job_object()
 
     def get_api_object(self):
-        return {
+        obj = {
             "name": self.jobname,
             "cmd": self.cmd,
             "image": self.image,
             "user": self.username,
             "namespace": self.ns,
             "status": self.status,
-            "schedule": self.schedule,
         }
+
+        if self.schedule is not None:
+            obj["schedule"] = self.schedule
+
+        return obj
