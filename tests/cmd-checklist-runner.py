@@ -96,13 +96,15 @@ def stage_validate_config(args):
 
 def cmd_run(cmd, expected_retcode, expected_stdout, expected_stderr):
     success = True
-    logging.debug(f"running command: {cmd}")
+    expanded_cmd = os.path.expandvars(cmd)
+    logging.debug(f"running command: {expanded_cmd}")
     r = subprocess.run(cmd, capture_output=True, shell=True)
 
     if expected_retcode is not None:
         if r.returncode != expected_retcode:
             logging.warning(
-                f"cmd '{cmd}', expected return code '{expected_retcode}', but got '{r.returncode}'"
+                f"cmd '{expanded_cmd}', expected return code '{expected_retcode}', "
+                f"but got '{r.returncode}'"
             )
             success = False
     else:
@@ -111,7 +113,9 @@ def cmd_run(cmd, expected_retcode, expected_stdout, expected_stderr):
     if expected_stdout is not None:
         stdout = r.stdout.decode("utf-8")
         if stdout != expected_stdout:
-            logging.warning(f"cmd '{cmd}', expected stdout '{expected_stdout}', but got '{stdout}'")
+            logging.warning(
+                f"cmd '{expanded_cmd}', expected stdout '{expected_stdout}', but got '{stdout}'"
+            )
             success = False
     else:
         logging.debug("no stdout defined for command, ignoring")
@@ -119,7 +123,9 @@ def cmd_run(cmd, expected_retcode, expected_stdout, expected_stderr):
     if expected_stderr is not None:
         stderr = r.stderr.decode("utf-8").strip()
         if stderr != expected_stderr:
-            logging.warning(f"cmd '{cmd}', expected stderr '{expected_stderr}', but got '{stderr}'")
+            logging.warning(
+                f"cmd '{expanded_cmd}', expected stderr '{expected_stderr}', but got '{stderr}'"
+            )
             success = False
     else:
         logging.debug("no stderr defined for command, ignoring")
