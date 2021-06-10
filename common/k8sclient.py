@@ -115,9 +115,15 @@ class K8sClient(object):
                     version=K8sClient.VERSIONS[kind],
                 )
         else:
+            deleteoptions = {
+                "kind": "DeleteOptions",
+                "apiVersion": "v1",
+                "propagationPolicy": "Background",
+            }
+
             self._delete(
                 kind,
-                params={"labelSelector": selector},
+                params={"labelSelector": selector, "json": deleteoptions},
                 version=K8sClient.VERSIONS[kind],
             )
 

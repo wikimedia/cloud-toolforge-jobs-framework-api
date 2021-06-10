@@ -1,5 +1,6 @@
 from flask_restful import Resource
 from tjf.user import User
+from tjf.job import Job
 
 
 class Flush(Resource):
@@ -9,9 +10,17 @@ class Flush(Resource):
         except Exception as e:
             return f"Exception: {e}", 401
 
-        # TODO: use labels to only delete stuff created by this framework
-        user.kapi.delete_objects("jobs")
-        user.kapi.delete_objects("cronjobs")
-        user.kapi.delete_objects("deployments")
+        user.kapi.delete_objects(
+            "pods", selector=Job.get_labels_selector(jobname=None, username=user.name)
+        )
+        user.kapi.delete_objects(
+            "jobs", selector=Job.get_labels_selector(jobname=None, username=user.name)
+        )
+        user.kapi.delete_objects(
+            "cronjobs", selector=Job.get_labels_selector(jobname=None, username=user.name)
+        )
+        user.kapi.delete_objects(
+            "deployments", selector=Job.get_labels_selector(jobname=None, username=user.name)
+        )
 
         return "", 200

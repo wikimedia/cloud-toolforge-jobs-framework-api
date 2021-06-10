@@ -16,6 +16,13 @@ sudo mkdir -p /var/lib/sss/pipes/
 sudo mkdir -p /data/project/
 sudo chmod -R a+wx /data/project/
 
+cat <<EOF > /data/project/${USER}/sleep40.sh
+ echo "Waiting 40"
+ sleep 40
+EOF
+chmod a-x /data/project/${USER}/sleep40.sh
+
+
 # to hold .kube/config
 mkdir -p /data/project/${USER}/.kube/
 
@@ -58,7 +65,7 @@ users:
 EOF
 
 # generate user stuff
-kubectl create namespace "tool-test"
+kubectl create namespace "tool-test" || true
 
 # generate fake toolforge config
 kubectl apply -f ./devel/faketoolforge.yaml

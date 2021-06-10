@@ -23,14 +23,18 @@ class Job:
 
     @classmethod
     def get_labels(self, jobname, username):
-        return {
+        obj = {
             "toolforge": "tool",
             "app.kubernetes.io/component": "tool",
             "app.kubernetes.io/version": "1",
             "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
-            "app.kubernetes.io/name": jobname,
             "app.kubernetes.io/created-by": username,
         }
+
+        if jobname is not None:
+            obj["app.kubernetes.io/name"] = jobname
+
+        return obj
 
     @classmethod
     def get_labels_selector(self, jobname, username):
@@ -148,7 +152,7 @@ class Job:
         return obj
 
     def _get_k8s_job_object(self):
-        return {
+        obj = {
             "apiVersion": "batch/v1",
             "kind": "Job",
             "metadata": {
@@ -158,6 +162,11 @@ class Job:
             },
             "spec": self._get_k8s_podtemplate(restartpolicy="Never"),
         }
+
+        # delete job when it finishes. This somewhat mimics grid behavior, no?
+        obj["spec"]["ttlSecondsAfterFinished"] = 0
+
+        return obj
 
     def get_k8s_object(self):
         if self.k8s_type == "cronjobs":
