@@ -13,13 +13,19 @@
 ---
 - name: "list containers"
   tests:
-    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q name
+    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: ""
-      stderr: ""
-    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q type
-      retcode: 0
-      stdout: ""
+      stdout: |
+       [
+           {
+               "shortname": "tf-buster",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest"
+           },
+           {
+               "shortname": "tf-buster-std",
+               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest"
+           }
+       ]
       stderr: ""
 
 - name: "flush everything"
@@ -56,7 +62,7 @@
        {
            "name": "normaljob",
            "cmd": "./sleep.sh",
-           "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+           "image": "tf-buster-std",
            "user": "test",
            "namespace": "tool-test",
            "status": "unknown"
@@ -72,7 +78,7 @@
            {
                "name": "normaljob",
                "cmd": "./sleep.sh",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
                "status": "unknown"
@@ -157,7 +163,7 @@
        {
            "name": "cronjob",
            "cmd": "true",
-           "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+           "image": "tf-buster-std",
            "user": "test",
            "namespace": "tool-test",
            "status": "unknown",
@@ -174,7 +180,7 @@
            {
                "name": "cronjob",
                "cmd": "true",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
                "status": "unknown",
@@ -259,7 +265,7 @@
        {
            "name": "continuousjob",
            "cmd": "true",
-           "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+           "image": "tf-buster-std",
            "user": "test",
            "namespace": "tool-test",
            "status": "unknown",
@@ -276,7 +282,7 @@
            {
                "name": "continuousjob",
                "cmd": "true",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
                "status": "unknown",
@@ -363,7 +369,7 @@
            {
                "name": "normaljob",
                "cmd": "./sleep.sh",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
                "status": "unknown"
@@ -371,7 +377,7 @@
            {
                "name": "cronjob",
                "cmd": "true",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
                "status": "unknown",
@@ -380,7 +386,7 @@
            {
                "name": "continuousjob",
                "cmd": "true",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+               "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
                "status": "unknown",

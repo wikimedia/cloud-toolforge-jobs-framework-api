@@ -4,27 +4,32 @@ from flask_restful import Resource
 # We could maintain this harcoded list by hand, similar to what we do for tools-webservices
 AVAILABLE_CONTAINERS = [
     {
-        "name": "tf-buster",
-        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
+        "shortname": "tf-buster",
+        "image": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest",
     },
     {
-        "name": "tf-buster-std",
-        "type": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
+        "shortname": "tf-buster-std",
+        "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
     },
 ]
 
 
-def container_get_image(name):
+def container_get_image(shortname):
     for container in AVAILABLE_CONTAINERS:
-        if container.get("name") == name:
-            return container.get("type")
+        if container.get("shortname") == shortname:
+            return container.get("image")
 
 
-def container_validate(name):
-    for container in AVAILABLE_CONTAINERS:
-        if container.get("name") == name:
-            return True
+def container_validate(shortname):
+    if container_get_image(shortname) is not None:
+        return True
     return False
+
+
+def container_get_shortname(image):
+    for container in AVAILABLE_CONTAINERS:
+        if container.get("image") == image:
+            return container.get("shortname")
 
 
 class Containers(Resource):

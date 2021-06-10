@@ -1,3 +1,4 @@
+from tjf.containers import container_get_shortname
 import tjf.utils as utils
 
 
@@ -181,7 +182,7 @@ class Job:
         obj = {
             "name": self.jobname,
             "cmd": self.cmd,
-            "image": self.image,
+            "image": container_get_shortname(self.image),
             "user": self.username,
             "namespace": self.ns,
             "status": self.status,
