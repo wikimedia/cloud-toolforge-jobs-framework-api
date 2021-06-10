@@ -11,9 +11,6 @@ class Flush(Resource):
             return f"Exception: {e}", 401
 
         user.kapi.delete_objects(
-            "pods", selector=Job.get_labels_selector(jobname=None, username=user.name)
-        )
-        user.kapi.delete_objects(
             "jobs", selector=Job.get_labels_selector(jobname=None, username=user.name)
         )
         user.kapi.delete_objects(
@@ -21,6 +18,9 @@ class Flush(Resource):
         )
         user.kapi.delete_objects(
             "deployments", selector=Job.get_labels_selector(jobname=None, username=user.name)
+        )
+        user.kapi.delete_objects(
+            "pods", selector=Job.get_labels_selector(jobname=None, username=user.name)
         )
 
         return "", 200

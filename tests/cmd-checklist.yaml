@@ -9,7 +9,7 @@
       CONTJOBNAME: "continuousjob"
       IMG: "tf-buster-std"
       SLEEP: "10"
-      KUBECTL_ARGS: --kubeconfig=/data/project/test/.kube/config
+      KUBECTL_ARGS: --kubeconfig=/data/project/test/.kube/config -n tool-test
 ---
 - name: "list containers"
   tests:
@@ -458,5 +458,5 @@
     - cmd: sleep ${SLEEP} ; sleep ${SLEEP} ; sleep ${SLEEP}
     - cmd: kubectl ${KUBECTL_ARGS} get all
       retcode: 0
-      stdout: "No resources found in tool-test namespace.\n"
-      stderr: ""
+      stdout: ""
+      stderr: "No resources found in tool-test namespace."
