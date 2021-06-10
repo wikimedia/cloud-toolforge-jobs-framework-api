@@ -16,14 +16,16 @@ class Show(Resource):
         except Exception as e:
             return f"Exception: {e}", 401
 
+        selector = Job.get_labels_selector(jobname=None, username=user.name)
+
         job_list = []
-        for job in user.kapi.get_objects("jobs"):
+        for job in user.kapi.get_objects("jobs", selector=selector):
             job_list.append(Job.from_job_k8s_object(job))
 
-        for job in user.kapi.get_objects("cronjobs"):
+        for job in user.kapi.get_objects("cronjobs", selector=selector):
             job_list.append(Job.from_cronjob_k8s_object(job))
 
-        for job in user.kapi.get_objects("deployments"):
+        for job in user.kapi.get_objects("deployments", selector=selector):
             job_list.append(Job.from_dp_k8s_object(job))
 
         job = find_job(job_list, name)
