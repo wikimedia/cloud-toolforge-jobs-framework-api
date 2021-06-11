@@ -237,10 +237,10 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: nginx-ingress-controller
-          image: docker-registry.tools.wmflabs.org/nginx-ingress-controller:0.25.1
+          image: docker-registry.tools.wmflabs.org/nginx-ingress-controller:v0.46.0
           args:
             - /nginx-ingress-controller
-            - --http-port=30001
+            - --https-port=30001
             - --configmap=$(POD_NAMESPACE)/nginx-configuration
             - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
             - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
