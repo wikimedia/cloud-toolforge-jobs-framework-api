@@ -50,10 +50,16 @@ class User:
         if header not in request.headers:
             raise Exception(f"missing '{header}' header")
 
+        # we are expecting something like 'CN=user,0=Toolforge'
         value = request.headers.get(header)
-        if not value.startswith("CN="):
-            raise Exception(f"missing CN= string in '{header}' header")
+        for rawfield in value.split(","):
+            field = rawfield.strip()
+            if field.startswith("CN="):
+                name = field.split("=")[1]
+                return User(name=name)
 
-        name = value.split("=")[1]
+        # give it another try, in case we got just 'CN=user'
+        if value.strip().startswith("CN="):
+            return User(name=value.strip().split("=")[1])
 
-        return User(name=name)
+        raise Exception(f"couldn't understand SSL header '{header}': '{value}'")

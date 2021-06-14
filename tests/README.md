@@ -24,7 +24,7 @@ to override the env, something like this:
 ```
 $ sed -i s@https://kind-control-plane:6443@https://127.0.0.1:43629@g /data/project/test/.kube/config
 $ python3 api.py
-$ CURL_HDR="ssl-client-subject-dn: CN=test" CURL_URL="http://localhost:8080/api/v1" CURL_ARGS="" tests/cmd-checklist-runner.py --config-file tests/cmd-checklist.yaml
+$ CURL_HDR="ssl-client-subject-dn: CN=test,0=Toolforge" CURL_URL="http://localhost:8080/api/v1" CURL_ARGS="" tests/cmd-checklist-runner.py --config-file tests/cmd-checklist.yaml
 ```
 
 
