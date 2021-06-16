@@ -1,5 +1,30 @@
 from tjf.containers import container_get_shortname
+from tjf.user import User
 import tjf.utils as utils
+
+
+def find_job(user: User, jobname: str):
+    list = list_all_jobs(user=user, jobname=jobname)
+
+    for job in list:
+        if job.jobname == jobname:
+            return job
+
+
+def list_all_jobs(user: User, jobname: str):
+    selector = Job.get_labels_selector(jobname=jobname, username=user.name)
+
+    job_list = []
+    for job in user.kapi.get_objects("jobs", selector=selector):
+        job_list.append(Job.from_job_k8s_object(job))
+
+    for job in user.kapi.get_objects("cronjobs", selector=selector):
+        job_list.append(Job.from_cronjob_k8s_object(job))
+
+    for job in user.kapi.get_objects("deployments", selector=selector):
+        job_list.append(Job.from_dp_k8s_object(job))
+
+    return job_list
 
 
 class Job:
