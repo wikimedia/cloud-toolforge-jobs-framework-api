@@ -1,5 +1,5 @@
 import requests
-from tjf.job import Job
+from tjf.job import Job, find_job
 from flask_restful import Resource, reqparse
 from tjf.containers import container_validate, container_get_image
 from tjf.user import User
@@ -25,7 +25,9 @@ class Run(Resource):
         if not container_validate(args.imagename):
             return "Invalid container type", 400
 
-        # TODO: add support for continuous jobs
+        if find_job(user=user, jobname=args.name) is not None:
+            return "HTTP 409: a job with the same name exists already", 409
+
         job = Job(
             cmd=args.cmd,
             image=container_get_image(args.imagename),
@@ -44,7 +46,7 @@ class Run(Resource):
             if e.response.status_code == 409 or str(e).startswith(
                 "409 Client Error: Conflict for url"
             ):
-                result = "HTTP 409: a job with the same name exists already", 409
+                result = "HTTP 409: an object with the same name exists already", 409
             else:
                 result = str(e), e.response.status_code
 
