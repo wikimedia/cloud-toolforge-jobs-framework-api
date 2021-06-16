@@ -3,6 +3,11 @@ from tjf.user import User
 import tjf.utils as utils
 
 
+def delete_job(user: User, jobname: str):
+    for object in ["jobs", "cronjobs", "deployments", "pods"]:
+        user.kapi.delete_objects(object, selector=Job.get_labels_selector(jobname, user.name))
+
+
 def find_job(user: User, jobname: str):
     list = list_all_jobs(user=user, jobname=jobname)
 
