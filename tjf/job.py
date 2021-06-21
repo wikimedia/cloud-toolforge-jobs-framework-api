@@ -1,6 +1,7 @@
 from tjf.containers import container_get_shortname
 from tjf.user import User
 import tjf.utils as utils
+from common.k8sclient import K8sClient
 
 
 def delete_job(user: User, jobname: str):
@@ -150,7 +151,7 @@ class Job:
 
     def _get_k8s_cronjob_object(self):
         return {
-            "apiVersion": "batch/v1",
+            "apiVersion": K8sClient.VERSIONS["cronjobs"],
             "kind": "CronJob",
             "metadata": {
                 "name": self.jobname,
@@ -166,7 +167,7 @@ class Job:
     def _get_k8s_deployment_object(self):
         obj = {
             "kind": "Deployment",
-            "apiVersion": "apps/v1",
+            "apiVersion": K8sClient.VERSIONS["deployments"],
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
@@ -184,7 +185,7 @@ class Job:
 
     def _get_k8s_job_object(self):
         obj = {
-            "apiVersion": "batch/v1",
+            "apiVersion": K8sClient.VERSIONS["jobs"],
             "kind": "Job",
             "metadata": {
                 "name": self.jobname,
