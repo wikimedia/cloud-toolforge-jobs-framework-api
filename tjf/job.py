@@ -5,8 +5,14 @@ from common.k8sclient import K8sClient
 
 
 def delete_job(user: User, jobname: str):
-    for object in ["jobs", "cronjobs", "deployments", "pods"]:
-        user.kapi.delete_objects(object, selector=Job.get_labels_selector(jobname, user.name))
+    for object in ["jobs", "cronjobs", "deployments"]:
+        user.kapi.delete_objects(object, selector=labels_selector(jobname, user.name, object))
+
+    # extra explicit cleanup of jobs (may have been created by cronjobs)
+    user.kapi.delete_objects("jobs", selector=labels_selector(jobname, user.name, None))
+
+    # extra explicit cleanup of pods
+    user.kapi.delete_objects("pods", selector=labels_selector(jobname, user.name, None))
 
 
 def find_job(user: User, jobname: str):
@@ -18,14 +24,37 @@ def find_job(user: User, jobname: str):
 
 
 def list_all_jobs(user: User, jobname: str):
-    selector = Job.get_labels_selector(jobname=jobname, username=user.name)
-
     job_list = []
+
     for kind in ["jobs", "cronjobs", "deployments"]:
+        selector = labels_selector(jobname=jobname, username=user.name, type=kind)
         for job in user.kapi.get_objects(kind, selector=selector):
             job_list.append(Job.from_k8s_object(object=job, kind=kind))
 
     return job_list
+
+
+def labels(jobname: str, username: str, type: str):
+    obj = {
+        "toolforge": "tool",
+        "app.kubernetes.io/version": "1",
+        "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+        "app.kubernetes.io/created-by": username,
+    }
+
+    if type is not None:
+        obj["app.kubernetes.io/component"] = type
+
+    if jobname is not None:
+        obj["app.kubernetes.io/name"] = jobname
+
+    return obj
+
+
+def labels_selector(jobname: str, username: str, type: str):
+    return ",".join(
+        ["{k}={v}".format(k=k, v=v) for k, v in labels(jobname, username, type).items()]
+    )
 
 
 class Job:
@@ -47,27 +76,6 @@ class Job:
             self.k8s_type = "deployments"
         else:
             self.k8s_type = "jobs"
-
-    @classmethod
-    def get_labels(self, jobname, username):
-        obj = {
-            "toolforge": "tool",
-            "app.kubernetes.io/component": "tool",
-            "app.kubernetes.io/version": "1",
-            "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
-            "app.kubernetes.io/created-by": username,
-        }
-
-        if jobname is not None:
-            obj["app.kubernetes.io/name"] = jobname
-
-        return obj
-
-    @classmethod
-    def get_labels_selector(self, jobname, username):
-        return ",".join(
-            ["{k}={v}".format(k=k, v=v) for k, v in self.get_labels(jobname, username).items()]
-        )
 
     def _parse_k8s_podtemplate(self, object, podspec, schedule, cont):
         metadata = utils.dict_get_object(object, "metadata")
@@ -113,7 +121,7 @@ class Job:
     def _get_k8s_podtemplate(self, restartpolicy):
         return {
             "template": {
-                "metadata": {"labels": self.get_labels(self.jobname, self.username)},
+                "metadata": {"labels": labels(self.jobname, self.username, self.k8s_type)},
                 "spec": {
                     "restartPolicy": restartpolicy,
                     "containers": [
@@ -145,7 +153,7 @@ class Job:
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
-                "labels": self.get_labels(self.jobname, self.username),
+                "labels": labels(self.jobname, self.username, self.k8s_type),
             },
             "spec": {
                 "schedule": self.schedule,
@@ -160,14 +168,14 @@ class Job:
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
-                "labels": self.get_labels(self.jobname, self.username),
+                "labels": labels(self.jobname, self.username, self.k8s_type),
             },
             "spec": self._get_k8s_podtemplate(restartpolicy="Always"),
         }
 
         obj["spec"]["replicas"] = 1
         obj["spec"]["selector"] = {
-            "matchLabels": self.get_labels(self.jobname, self.username),
+            "matchLabels": labels(self.jobname, self.username, self.k8s_type),
         }
 
         return obj
@@ -179,7 +187,7 @@ class Job:
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
-                "labels": self.get_labels(self.jobname, self.username),
+                "labels": labels(self.jobname, self.username, self.k8s_type),
             },
             "spec": self._get_k8s_podtemplate(restartpolicy="Never"),
         }
