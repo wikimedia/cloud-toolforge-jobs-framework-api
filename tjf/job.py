@@ -21,14 +21,9 @@ def list_all_jobs(user: User, jobname: str):
     selector = Job.get_labels_selector(jobname=jobname, username=user.name)
 
     job_list = []
-    for job in user.kapi.get_objects("jobs", selector=selector):
-        job_list.append(Job.from_job_k8s_object(job))
-
-    for job in user.kapi.get_objects("cronjobs", selector=selector):
-        job_list.append(Job.from_cronjob_k8s_object(job))
-
-    for job in user.kapi.get_objects("deployments", selector=selector):
-        job_list.append(Job.from_dp_k8s_object(job))
+    for kind in ["jobs", "cronjobs", "deployments"]:
+        for job in user.kapi.get_objects(kind, selector=selector):
+            job_list.append(Job.from_k8s_object(object=job, kind=kind))
 
     return job_list
 
@@ -93,32 +88,26 @@ class Job:
         return Job(cmd, image, jobname, namespace, user, status, schedule=schedule, cont=cont)
 
     @classmethod
-    def from_cronjob_k8s_object(self, cronjob_definition):
-        spec = utils.dict_get_object(cronjob_definition, "spec")
-        schedule = spec["schedule"]
+    def from_k8s_object(self, object: dict, kind: str):
+        spec = utils.dict_get_object(object, "spec")
+
+        if kind == "cronjobs":
+            schedule = spec["schedule"]
+            cont = False
+            podspec = spec["jobTemplate"]["spec"]
+        elif kind == "deployments":
+            schedule = None
+            cont = True
+            podspec = spec
+        elif kind == "jobs":
+            schedule = None
+            cont = False
+            podspec = spec
+        else:
+            raise Exception(f"received a kubernetes object we don't understand: {object}")
 
         return self._parse_k8s_podtemplate(
-            self,
-            object=cronjob_definition,
-            podspec=spec["jobTemplate"]["spec"],
-            schedule=schedule,
-            cont=False,
-        )
-
-    @classmethod
-    def from_dp_k8s_object(self, deployment_definition):
-        podspec = utils.dict_get_object(deployment_definition, "spec")
-
-        return self._parse_k8s_podtemplate(
-            self, object=deployment_definition, podspec=podspec, schedule=None, cont=True
-        )
-
-    @classmethod
-    def from_job_k8s_object(self, job_definition):
-        podspec = utils.dict_get_object(job_definition, "spec")
-
-        return self._parse_k8s_podtemplate(
-            self, object=job_definition, podspec=podspec, schedule=None, cont=False
+            self, object=object, podspec=podspec, schedule=schedule, cont=cont
         )
 
     def _get_k8s_podtemplate(self, restartpolicy):
