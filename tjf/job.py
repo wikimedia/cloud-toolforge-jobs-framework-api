@@ -147,7 +147,7 @@ class Job:
         }
 
     def _get_k8s_cronjob_object(self):
-        return {
+        obj = {
             "apiVersion": K8sClient.VERSIONS["cronjobs"],
             "kind": "CronJob",
             "metadata": {
@@ -157,10 +157,17 @@ class Job:
             },
             "spec": {
                 "schedule": self.schedule,
-                "successfulJobsHistoryLimit": 1,
+                "successfulJobsHistoryLimit": 0,
+                "failedJobsHistoryLimit": 0,
+                "concurrencyPolicy": "Forbid",
                 "jobTemplate": {"spec": self._get_k8s_podtemplate(restartpolicy="Never")},
             },
         }
+
+        obj["spec"]["jobTemplate"]["spec"]["ttlSecondsAfterFinished"] = 0
+        obj["spec"]["jobTemplate"]["spec"]["backoffLimit"] = 1
+
+        return obj
 
     def _get_k8s_deployment_object(self):
         obj = {
@@ -195,6 +202,7 @@ class Job:
 
         # delete job when it finishes. This somewhat mimics grid behavior, no?
         obj["spec"]["ttlSecondsAfterFinished"] = 0
+        obj["spec"]["backoffLimit"] = 1
 
         return obj
 
