@@ -157,6 +157,7 @@ class Job:
             },
             "spec": {
                 "schedule": self.schedule,
+                "successfulJobsHistoryLimit": 1,
                 "jobTemplate": {"spec": self._get_k8s_podtemplate(restartpolicy="Never")},
             },
         }
