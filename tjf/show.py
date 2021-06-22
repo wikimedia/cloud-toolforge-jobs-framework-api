@@ -1,5 +1,5 @@
 from flask_restful import Resource
-from tjf.job import find_job
+from tjf.ops import find_job
 from tjf.user import User
 
 

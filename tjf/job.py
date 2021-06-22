@@ -1,60 +1,7 @@
 from tjf.containers import container_get_shortname
-from tjf.user import User
 import tjf.utils as utils
 from common.k8sclient import K8sClient
-
-
-def delete_job(user: User, jobname: str):
-    for object in ["jobs", "cronjobs", "deployments"]:
-        user.kapi.delete_objects(object, selector=labels_selector(jobname, user.name, object))
-
-    # extra explicit cleanup of jobs (may have been created by cronjobs)
-    user.kapi.delete_objects("jobs", selector=labels_selector(jobname, user.name, None))
-
-    # extra explicit cleanup of pods
-    user.kapi.delete_objects("pods", selector=labels_selector(jobname, user.name, None))
-
-
-def find_job(user: User, jobname: str):
-    list = list_all_jobs(user=user, jobname=jobname)
-
-    for job in list:
-        if job.jobname == jobname:
-            return job
-
-
-def list_all_jobs(user: User, jobname: str):
-    job_list = []
-
-    for kind in ["jobs", "cronjobs", "deployments"]:
-        selector = labels_selector(jobname=jobname, username=user.name, type=kind)
-        for job in user.kapi.get_objects(kind, selector=selector):
-            job_list.append(Job.from_k8s_object(object=job, kind=kind))
-
-    return job_list
-
-
-def labels(jobname: str, username: str, type: str):
-    obj = {
-        "toolforge": "tool",
-        "app.kubernetes.io/version": "1",
-        "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
-        "app.kubernetes.io/created-by": username,
-    }
-
-    if type is not None:
-        obj["app.kubernetes.io/component"] = type
-
-    if jobname is not None:
-        obj["app.kubernetes.io/name"] = jobname
-
-    return obj
-
-
-def labels_selector(jobname: str, username: str, type: str):
-    return ",".join(
-        ["{k}={v}".format(k=k, v=v) for k, v in labels(jobname, username, type).items()]
-    )
+from tjf.labels import labels
 
 
 class Job:

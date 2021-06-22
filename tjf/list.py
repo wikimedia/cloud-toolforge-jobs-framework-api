@@ -1,6 +1,6 @@
 from flask_restful import Resource
 from tjf.user import User
-from tjf.job import list_all_jobs
+from tjf.ops import list_all_jobs
 
 
 class List(Resource):

@@ -1,8 +1,9 @@
 import requests
-from tjf.job import Job, find_job
+from tjf.job import Job
 from flask_restful import Resource, reqparse
 from tjf.containers import container_validate, container_get_image
 from tjf.user import User
+from tjf.ops import find_job, create_job
 
 # arguments that the API understands
 parser = reqparse.RequestParser()
@@ -40,7 +41,7 @@ class Run(Resource):
         )
 
         try:
-            result = user.kapi.create_object(job.k8s_type, job.get_k8s_object())
+            result = create_job(user=user, job=job)
         except requests.exceptions.HTTPError as e:
             # hope k8s doesn't change this behavior too often
             if e.response.status_code == 409 or str(e).startswith(
