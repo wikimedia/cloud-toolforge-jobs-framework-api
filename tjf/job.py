@@ -11,7 +11,10 @@ class Job:
         self.jobname = jobname
         self.ns = ns
         self.username = username
-        self.status = "unknown"
+        self.status = {
+            "short": "Unknown",
+            "long": "Unknown",
+        }
         self.schedule = schedule
         self.cont = cont
         self.k8s_object = k8s_object

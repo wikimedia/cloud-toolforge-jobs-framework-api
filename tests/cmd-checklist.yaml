@@ -54,36 +54,46 @@
       stdout: ""
       stderr: ""
 
-- name: "show normal job"
+- name: "show normal job, all fields are present"
   tests:
-    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep name | grep -q ${JOBNAME}
       retcode: 0
-      stdout: |
-       {
-           "name": "normaljob",
-           "cmd": "./sleep.sh",
-           "image": "tf-buster-std",
-           "user": "test",
-           "namespace": "tool-test",
-           "status": "unknown"
-       }
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep cmd | grep -q ${NORMALJOB_CMD}
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep image | grep -q ${IMG}
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep user | grep -q test
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | grep -q tool-test
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q status
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q short
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q long
+      retcode: 0
+      stdout: ""
       stderr: ""
 
 - name: "list jobs, only normal job is present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status | wc -l
       retcode: 0
-      stdout: |
-       [
-           {
-               "name": "normaljob",
-               "cmd": "./sleep.sh",
-               "image": "tf-buster-std",
-               "user": "test",
-               "namespace": "tool-test",
-               "status": "unknown"
-           }
-       ]
+      stdout: "1\n"
       stderr: ""
 
 - name: "delete normal job"
@@ -103,13 +113,14 @@
       stdout: ""
       stderr: ""
 
-- name: "create 2 normal jobs and delete one by one"
+- name: "create 2 normal jobs"
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}"
       retcode: 0
       stdout: "201\n"
       stderr: ""
-    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}2" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}"
+    # note this one has a wrong CMD
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}2" -d "imagename=${IMG}" -d "cmd=wrong"
       retcode: 0
       stdout: "201\n"
       stderr: ""
@@ -119,6 +130,16 @@
       retcode: 0
       stdout: "2\n"
       stderr: ""
+
+- name: verify status report on wrong job
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep short | grep -q Unknown
+      retcode: 0
+      stdout: ""
+      stderr: ""
+
+- name: delete 2 normal jobs one by one
+  tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
       stdout: "\"\"\n"
@@ -155,20 +176,43 @@
       stdout: ""
       stderr: ""
 
-- name: "show cronjob"
+- name: "show cronjob, all fields are present"
   tests:
-    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep name | grep -q ${CRONJOBNAME}
       retcode: 0
-      stdout: |
-       {
-           "name": "cronjob",
-           "cmd": "true",
-           "image": "tf-buster-std",
-           "user": "test",
-           "namespace": "tool-test",
-           "status": "unknown",
-           "schedule": "*/10 * * * *"
-       }
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep cmd | grep -q true
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep image | grep -q ${IMG}
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep user | grep -q test
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | grep -q tool-test
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q status
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q short
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q long
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep schedule | grep -q "*/10 * * * *"
+      retcode: 0
+      stdout: ""
       stderr: ""
 
 - name: "list jobs, only cronjob is present"
@@ -183,7 +227,10 @@
                "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
-               "status": "unknown",
+               "status": {
+                   "short": "Last schedule time: unknown",
+                   "long": "No additional information until next execution."
+               },
                "schedule": "*/10 * * * *"
            }
        ]
@@ -220,7 +267,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "schedule" | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "4\n"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -230,7 +277,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "schedule" | wc -l
       retcode: 0
-      stdout: "1\n"
+      stdout: "2\n"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -257,20 +304,43 @@
       stdout: "\"HTTP 409: a job with the same name exists already\"\n"
       stderr: ""
 
-- name: "show continuous job"
+- name: "show continuous job, all fields are present"
   tests:
-    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep name | grep -q ${CONTJOBNAME}
       retcode: 0
-      stdout: |
-       {
-           "name": "continuousjob",
-           "cmd": "true",
-           "image": "tf-buster-std",
-           "user": "test",
-           "namespace": "tool-test",
-           "status": "unknown",
-           "continuous": true
-       }
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep cmd | grep -q true
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep image | grep -q ${IMG}
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep user | grep -q test
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | grep -q tool-test
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q status
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q short
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q long
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep continuous | grep -q true
+      retcode: 0
+      stdout: ""
       stderr: ""
 
 - name: "list jobs, only continuous job is present"
@@ -285,7 +355,10 @@
                "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
-               "status": "unknown",
+               "status": {
+                   "short": "Not running",
+                   "long": "There are 1 pods for this job. 1 pods in 'Pending' state."
+               },
                "continuous": true
            }
        ]
@@ -362,37 +435,17 @@
 
 - name: "list jobs, all 3 types are present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status | wc -l
       retcode: 0
-      stdout: |
-       [
-           {
-               "name": "normaljob",
-               "cmd": "./sleep.sh",
-               "image": "tf-buster-std",
-               "user": "test",
-               "namespace": "tool-test",
-               "status": "unknown"
-           },
-           {
-               "name": "cronjob",
-               "cmd": "true",
-               "image": "tf-buster-std",
-               "user": "test",
-               "namespace": "tool-test",
-               "status": "unknown",
-               "schedule": "*/5 * * * *"
-           },
-           {
-               "name": "continuousjob",
-               "cmd": "true",
-               "image": "tf-buster-std",
-               "user": "test",
-               "namespace": "tool-test",
-               "status": "unknown",
-               "continuous": true
-           }
-       ]
+      stdout: "3\n"
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q schedule
+      retcode: 0
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q continuous
+      retcode: 0
+      stdout: ""
       stderr: ""
 
 - name: "delete cronjob, make sure it doesn't remove the others"
