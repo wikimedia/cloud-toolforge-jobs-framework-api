@@ -35,8 +35,8 @@ class Run(Resource):
             ns=user.namespace,
             username=user.name,
             schedule=args.schedule,
-            status=None,
             cont=args.continuous,
+            k8s_object=None,
         )
 
         try:

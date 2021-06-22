@@ -58,17 +58,16 @@ def labels_selector(jobname: str, username: str, type: str):
 
 
 class Job:
-    def __init__(self, cmd, image, jobname, ns, username, status, schedule, cont):
+    def __init__(self, cmd, image, jobname, ns, username, schedule, cont, k8s_object):
         self.cmd = cmd
         self.image = image
         self.jobname = jobname
         self.ns = ns
         self.username = username
-        if not status:
-            status = "unknown"
-        self.status = status
+        self.status = "unknown"
         self.schedule = schedule
         self.cont = cont
+        self.k8s_object = k8s_object
 
         if self.schedule is not None:
             self.k8s_type = "cronjobs"
@@ -77,26 +76,8 @@ class Job:
         else:
             self.k8s_type = "jobs"
 
-    def _parse_k8s_podtemplate(self, object, podspec, schedule, cont):
-        metadata = utils.dict_get_object(object, "metadata")
-        jobname = metadata["name"]
-        namespace = metadata["namespace"]
-        user = "".join(namespace.split("-")[1:])
-
-        cmd = podspec["template"]["spec"]["containers"][0]["command"][0]
-        image = podspec["template"]["spec"]["containers"][0]["image"]
-
-        status = "unknown"
-        status_dict = utils.dict_get_object(object, "status")
-        if status_dict and status_dict.get("conditions", None):
-            for condition in status_dict["conditions"]:
-                if condition["type"] == "Failed":
-                    status = "failed"
-
-        return Job(cmd, image, jobname, namespace, user, status, schedule=schedule, cont=cont)
-
     @classmethod
-    def from_k8s_object(self, object: dict, kind: str):
+    def from_k8s_object(cls, object: dict, kind: str):
         spec = utils.dict_get_object(object, "spec")
 
         if kind == "cronjobs":
@@ -114,8 +95,23 @@ class Job:
         else:
             raise Exception(f"received a kubernetes object we don't understand: {object}")
 
-        return self._parse_k8s_podtemplate(
-            self, object=object, podspec=podspec, schedule=schedule, cont=cont
+        metadata = utils.dict_get_object(object, "metadata")
+        jobname = metadata["name"]
+        namespace = metadata["namespace"]
+        user = "".join(namespace.split("-")[1:])
+
+        cmd = podspec["template"]["spec"]["containers"][0]["command"][0]
+        image = podspec["template"]["spec"]["containers"][0]["image"]
+
+        return cls(
+            cmd=cmd,
+            image=image,
+            jobname=jobname,
+            ns=namespace,
+            username=user,
+            schedule=schedule,
+            cont=cont,
+            k8s_object=object,
         )
 
     def _get_k8s_podtemplate(self, restartpolicy):
