@@ -11,10 +11,8 @@ class Job:
         self.jobname = jobname
         self.ns = ns
         self.username = username
-        self.status = {
-            "short": "Unknown",
-            "long": "Unknown",
-        }
+        self.status_short = "Unknown"
+        self.status_long = "Unknown"
         self.schedule = schedule
         self.cont = cont
         self.k8s_object = k8s_object
@@ -168,7 +166,8 @@ class Job:
             "image": container_get_shortname(self.image),
             "user": self.username,
             "namespace": self.ns,
-            "status": self.status,
+            "status_short": self.status_short,
+            "status_long": self.status_long,
         }
 
         if self.schedule is not None:

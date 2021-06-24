@@ -34,58 +34,17 @@ def list_all_jobs(user: User, jobname: str):
         selector = labels_selector(jobname=jobname, username=user.name, type=kind)
         for k8s_obj in user.kapi.get_objects(kind, selector=selector):
             job = Job.from_k8s_object(object=k8s_obj, kind=kind)
-            refresh_job_status(user, job)
+            refresh_job_short_status(user, job)
+            refresh_job_long_status(user, job)
             job_list.append(job)
 
     return job_list
 
 
-def _pods_in_phase(podlist, phase):
-    ret = 0
-    for pod in podlist:
-        if pod["status"]["phase"] == phase:
-            ret += 1
-
-    return ret
-
-
-def _pods_phase_report(job: Job, podlist: list):
-    n = len(podlist)
-    if n == 0:
-        job.status["long"] = "No additional information until next execution."
-        return
-    else:
-        job.status["long"] = f"There are {n} pods for this job."
-
-    for phase in ["Running", "Pending", "Failed", "Succeeded", "Terminating"]:
-        n = _pods_in_phase(podlist, phase)
-        if n > 0:
-            job.status["long"] += f" {n} pods in '{phase}' state."
-
-
 def _refresh_status_cronjob(user: User, job: Job):
     status_dict = utils.dict_get_object(job.k8s_object, "status")
     last = status_dict.get("lastScheduleTime", "unknown")
-    job.status["short"] = f"Last schedule time: {last}"
-
-    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
-    podlist = user.kapi.get_objects("pods", selector=selector)
-
-    _pods_phase_report(job, podlist)
-
-    for pod in podlist:
-        # try to provide some hint, search for pods in the Failed state.
-        if pod["status"]["phase"] != "Failed":
-            continue
-
-        for containerstatus in pod["status"]["containerStatuses"]:
-            hint = containerstatus["state"]
-            job.status["long"] += f" Additional hints from the kubernetes backend: {hint}"
-            # just one container. In general we just create 1 container per pod here
-            break
-
-        # just one is fine, we tried configuring the cronjob to only have 1 pod anyway
-        break
+    job.status_short = f"Last schedule time: {last}"
 
 
 def _refresh_status_dp(user: User, job: Job):
@@ -94,39 +53,9 @@ def _refresh_status_dp(user: User, job: Job):
     for condition in conditions_dict:
         if condition["type"] == "Available":
             if condition["status"] == "True":
-                job.status["short"] = "Running"
+                job.status_short = "Running"
             elif condition["status"] == "False":
-                job.status["short"] = "Not running"
-
-    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
-    podlist = user.kapi.get_objects("pods", selector=selector)
-
-    _pods_phase_report(job, podlist)
-
-    for pod in podlist:
-        # try to provide some additional hint
-        if pod["status"]["phase"] == "Running":
-            for containerstatus in pod["status"]["containerStatuses"]:
-                if not containerstatus["ready"]:
-                    job.status["long"] += " Pod not ready."
-
-                restartcount = containerstatus["restartCount"]
-                if restartcount > 0:
-                    job.status["long"] += f" Pod has been restarted {restartcount} times."
-
-                lastState = containerstatus["lastState"]
-                terminated = lastState.get("terminated", None)
-                if terminated:
-                    reason = terminated.get("reason", "unknown")
-                    retcode = terminated.get("exitCode", "unknown")
-                    job.status[
-                        "long"
-                    ] += f" Pod terminated because reason '{reason}' with exitcode '{retcode}'"
-
-                # just one container. In general we just create 1 container per pod here
-                break
-        # just one is fine, we configured the deployment to only have 1 pod anyway
-        break
+                job.status_short = "Not running"
 
 
 def _refresh_status_job(user: User, job: Job):
@@ -135,35 +64,16 @@ def _refresh_status_job(user: User, job: Job):
     for condition in conditions_dict:
         if condition["type"] == "Complete":
             if condition["status"] == "True":
-                job.status["short"] = "Completed"
+                job.status_short = "Completed"
             elif condition["status"] == "False":
-                job.status["short"] = "Not running"
+                job.status_short = "Not running"
 
     # no conditions?
-    if len(conditions_dict) == 0 and status_dict.get("failed", None) is not None:
-        job.status["short"] = "Failed"
-
-    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
-    podlist = user.kapi.get_objects("pods", selector=selector)
-
-    _pods_phase_report(job, podlist)
-
-    if status_dict.get("active", 0) == 1:
-        starttime = status_dict["startTime"]
-        job.status["long"] += f" Last run attempt at {starttime}."
-
-    for pod in podlist:
-        if pod.get("status", None) is None:
-            continue
-
-        for containerstatus in pod["status"].get("containerStatuses", []):
-            states = containerstatus.get("state", None)
-            for state in states:
-                msg = containerstatus["state"][state].get("message", "unknown")
-                job.status["long"] += f" State '{state}' for reason '{msg}'."
+    if job.status_short == "Unknown" and status_dict.get("failed", None) is not None:
+        job.status_short = "Failed"
 
 
-def refresh_job_status(user: User, job: Job):
+def refresh_job_short_status(user: User, job: Job):
     if job.k8s_type == "cronjobs":
         _refresh_status_cronjob(user, job)
     elif job.k8s_type == "deployments":
@@ -172,3 +82,58 @@ def refresh_job_status(user: User, job: Job):
         _refresh_status_job(user, job)
     else:
         raise Exception(f"couldn't refresh status for unknown job type: {job}")
+
+
+def refresh_job_long_status(user: User, job: Job):
+    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
+    podlist = user.kapi.get_objects("pods", selector=selector)
+
+    # we only evaluate the first pod, we should be creating 1 pod per job anyway
+    pod = podlist[0]
+
+    starttime = pod["status"].get("startTime", None)
+    if starttime is not None:
+        job.status_long = f"Last run at {starttime}."
+    else:
+        job.status_long = "Run not attempted yet."
+
+    # https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
+    phase = pod["status"].get("phase", "unknown")
+    job.status_long += f" Pod in '{phase}' phase."
+
+    # we only have 1 container per pod
+    containerstatus = pod["status"].get("containerStatuses", [])[0]
+    if containerstatus is None:
+        # nothing else to report
+        return
+
+    restartcount = containerstatus["restartCount"]
+    if restartcount > 0:
+        job.status_long += f" Pod has been restarted {restartcount} times."
+
+    # the pod didn't have a lastState, is currently live! (failing or not)
+    currentstate = containerstatus["state"]
+
+    # please python, I just need the key as a string
+    for c in currentstate:
+        state = c
+        break
+
+    reason = containerstatus["state"][state].get("reason", "unknown")
+    job.status_long += f" State '{state}' for reason '{reason}'."
+
+    start = containerstatus["state"][state].get("startedAt", "unknown")
+    if start != "unknown":
+        job.status_long += f" Started at '{start}'."
+
+    finish = containerstatus["state"][state].get("finishedAt", "unknown")
+    if finish != "unknown":
+        job.status_long += f" Finished at '{finish}'."
+
+    rc = containerstatus["state"][state].get("exitCode", "unknown")
+    if rc != "unknown":
+        job.status_long += f" Exit code '{rc}'."
+
+    msg = containerstatus["state"][state].get("message", "")
+    if msg != "":
+        job.status_long += f" Additional message:'{msg}'."
