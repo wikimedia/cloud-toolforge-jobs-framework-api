@@ -91,7 +91,7 @@
 
 - name: "list jobs, only normal job is present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status_short | wc -l
       retcode: 0
       stdout: "1\n"
       stderr: ""
@@ -227,10 +227,8 @@
                "image": "tf-buster-std",
                "user": "test",
                "namespace": "tool-test",
-               "status": {
-                   "short": "Last schedule time: unknown",
-                   "long": "No additional information until next execution."
-               },
+               "status_short": "Last schedule time: unknown",
+               "status_long": "No pods were created for this job.",
                "schedule": "*/10 * * * *"
            }
        ]
@@ -345,23 +343,13 @@
 
 - name: "list jobs, only continuous job is present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep continuous | grep -q true
       retcode: 0
-      stdout: |
-       [
-           {
-               "name": "continuousjob",
-               "cmd": "true",
-               "image": "tf-buster-std",
-               "user": "test",
-               "namespace": "tool-test",
-               "status": {
-                   "short": "Not running",
-                   "long": "There are 1 pods for this job. 1 pods in 'Pending' state."
-               },
-               "continuous": true
-           }
-       ]
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status_short | wc -l
+      retcode: 0
+      stdout: "1\n"
       stderr: ""
 
 - name: "delete continuous job"
@@ -435,7 +423,7 @@
 
 - name: "list jobs, all 3 types are present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status_short | wc -l
       retcode: 0
       stdout: "3\n"
       stderr: ""
