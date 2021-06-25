@@ -13,19 +13,13 @@
 ---
 - name: "list containers"
   tests:
-    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q shortname
       retcode: 0
-      stdout: |
-       [
-           {
-               "shortname": "tf-buster",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-sssd:latest"
-           },
-           {
-               "shortname": "tf-buster-std",
-               "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest"
-           }
-       ]
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q image
+      retcode: 0
+      stdout: ""
       stderr: ""
 
 - name: "flush everything"

@@ -5,7 +5,7 @@ from tjf.show import Show
 from tjf.list import List
 from tjf.delete import Delete
 from tjf.flush import Flush
-from tjf.containers import Containers
+from tjf.containers import Containers, update_available_containers
 
 app = Flask(__name__)
 api = Api(app)
@@ -19,4 +19,5 @@ api.add_resource(Containers, "/api/v1/containers/")
 
 
 if __name__ == "__main__":
+    update_available_containers()
     app.run(host="0.0.0.0", port=8080, debug=True)
