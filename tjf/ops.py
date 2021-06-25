@@ -88,6 +88,10 @@ def refresh_job_long_status(user: User, job: Job):
     selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
     podlist = user.kapi.get_objects("pods", selector=selector)
 
+    if len(podlist) == 0:
+        job.status_long = "No pods were created for this job."
+        return
+
     # we only evaluate the first pod, we should be creating 1 pod per job anyway
     pod = podlist[0]
 
@@ -101,11 +105,13 @@ def refresh_job_long_status(user: User, job: Job):
     phase = pod["status"].get("phase", "unknown")
     job.status_long += f" Pod in '{phase}' phase."
 
-    # we only have 1 container per pod
-    containerstatus = pod["status"].get("containerStatuses", [])[0]
-    if containerstatus is None:
+    statuses = pod["status"].get("containerStatuses", [])
+    if len(statuses) == 0:
         # nothing else to report
         return
+
+    # we only have 1 container per pod
+    containerstatus = statuses[0]
 
     restartcount = containerstatus["restartCount"]
     if restartcount > 0:
