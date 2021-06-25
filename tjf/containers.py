@@ -7,7 +7,8 @@ from flask_restful import Resource
 # fetch containers from our docker registry an generate the list at startup time.
 # This could enable a kind of simple workflow: restart the API to reload the available containers.
 
-BASE_URL = "https://docker-registry.tools.wmflabs.org"
+BASE_FQDN = "docker-registry.tools.wmflabs.org"
+BASE_URL = f"https://{BASE_FQDN}"
 CATALOG_URL = f"{BASE_URL}/v2/_catalog"
 
 AVAILABLE_CONTAINERS = []
@@ -48,7 +49,7 @@ def update_available_containers():
             .replace("-sssd-base", "")
             .replace("wikimedia-", "wm-")
         )
-        image = f"{BASE_URL}/{image}"
+        image = f"{BASE_FQDN}/{image}:latest"
 
         entry = {"shortname": shortname, "image": image}
 
