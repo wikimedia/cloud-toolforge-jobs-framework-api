@@ -48,53 +48,29 @@ nodes:
  3) Bootstrap kind cluster
 
 ```
-$ kind create cluster --config ~/kind.yaml
+$ kind create cluster --config ~/kind.yaml --image kindest/node:v1.18.19@sha256:xxxxxxxx
 ```
 
   Make sure kubectl works as expected, next steps require it.
 
- 4) Secret with the kubernetes CA:
+  The --image switch lets you select a particular k8s version. The SHA can be obtained from:
+  https://github.com/kubernetes-sigs/kind/releases
+  Make sure you deploy the same k8s version that tools/toolsbet use.
 
-  The string produced by the next command needs to be added to the `k8s-ca-secret` Secret in
-  the `deployment/deployment-kind-local.yaml` file.
+ 4) Deploy jobs-api
 
-```
-$ kubectl config view --raw -o json | jq -r '.clusters[0].cluster."certificate-authority-data"' | tr -d '"' | base64 --decode | base64 -w0
-```
-
-  If in a later stage, once the `jobs-api` namespace exists, you can get the k8s CA from the
-  .kube/config file installed by kind, and load it directly in PEM format:
-```
-$ kubectl config view --raw -o json | jq -r '.clusters[0].cluster."certificate-authority-data"' | tr -d '"' | base64 --decode > ca.crt
-$ kubectl -n jobs-api create secret generic k8s-ca-secret --from-file=ca.crt=ca.crt
-```
-
- 5) Generate server TLS certs.
-
-  This is the TLS cert that will be used by nginx-ingress in front of the jobs-framework-api.
+  From the top level directory of this repository, run:
 
 ```
-$ devel/k8s-get-cert.sh jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
-/tmp/tmp.HALKayZVhf/k8s-cert.pem
-/tmp/tmp.HALKayZVhf/k8s-key.pem
+$ deployment/deploy.sh
 ```
-
-  The string produced by the next command needs to be added to the `jobs-api-server-cert` Secret in
-  the `deployment/deployment-kind-local.yaml` file.
+  Now you need to override the imagepull policy for the jobs-api deployment:
 
 ```
-$ echo -n "tls.crt: " ; base64 -w0 /tmp/tmp.HALKayZVhf/k8s-cert.pem ; echo
-$ echo -n "tls.key: " ; base64 -w0 /tmp/tmp.HALKayZVhf/k8s-key.pem ; echo
+$ kubectl apply -f devel/kind-deployment-overrides.yaml
 ```
 
-  If in a later stage, once the `jobs-api` namespace exists, you can get this secret injected into
-  kubrenetes with:
-
-```
-$ kubectl -n jobs-api create secret tls jobs-api-server-cert --key /tmp/xxx/k8s-key.pem --cert /tmp/xxx/k8s-cert.pem
-```
-
- 6) Setup fake user `test`, and the rest of the environment.
+ 5) Setup fake user `test`, and the rest of the environment.
 
   In Toolforge kubernetes proper, this would be done by maintain-kubeusers.
 
@@ -102,13 +78,13 @@ $ kubectl -n jobs-api create secret tls jobs-api-server-cert --key /tmp/xxx/k8s-
 $ devel/setup.sh
 ```
 
- 7) Build jobs-framework-api docker image
+ 6) Build jobs-framework-api docker image
 
 ```
 $ docker build --tag jobs-api .
 ```
 
- 8) Load the docker image into kind
+ 7) Load the docker image into kind
 
   This way the docker image can be used in k8s deployments and such. Like having the image on a
   docker registry.
@@ -117,13 +93,13 @@ $ docker build --tag jobs-api .
 $ kind load docker-image jobs-api:latest
 ```
 
- 9) Deploy the whole jobs-api setup into kubernetes
+ 8) Deploy the whole jobs-api setup into kubernetes
 
 ```
 $ kubectl apply -f deployment/deployment-kind-local.yaml
 ```
 
- 10) At this point, hopefully, it should work:
+ 9) At this point, hopefully, it should work:
 
 ```
 $ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers/ \
@@ -133,6 +109,6 @@ $ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers
   --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1
 ```
 
- 11) Development iteration:
+ 10) Development iteration:
 
- Make code changes, and follow from step 7 onwards.
+ Make code changes, and follow from step 6 onwards.
