@@ -1,5 +1,5 @@
 # from tools-webservice toolsws/backends/kubernetes.py
-# copyright TBD
+# Copyright (C) 2020 Bryan Davis <bd808@wikimedia.org>
 
 import os
 import requests
