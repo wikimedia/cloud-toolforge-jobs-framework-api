@@ -20,10 +20,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
+        - jobs.svc.tools.eqiad1.wikimedia.cloud
       secretName: jobs-api-server-cert
   rules:
-  - host: jobs.svc.toolsbeta.eqiad1.wikimedia.cloud
+  - host: jobs.svc.tools.eqiad1.wikimedia.cloud
     http:
       paths:
       - backend:

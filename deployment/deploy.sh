@@ -11,6 +11,7 @@ project=$(cat /etc/wmcs-project)
 fqdn="jobs.svc.${project}.eqiad1.wikimedia.cloud"
 
 # load deployment
+kubectl apply -f deployment/deployment.yaml
 kubectl apply -f deployment/deployment-${project}.yaml
 
 # k8s CA secret for nginx-ingress
