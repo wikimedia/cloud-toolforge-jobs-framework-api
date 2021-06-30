@@ -1,4 +1,5 @@
 FROM debian:buster-slim
+WORKDIR /app
 RUN apt-get update
 RUN apt-get install uwsgi-plugin-python3 python3-pip python3-setuptools -y --no-install-recommends
 COPY requirements.txt requirements.txt
