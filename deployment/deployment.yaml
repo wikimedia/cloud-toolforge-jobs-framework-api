@@ -229,9 +229,9 @@ spec:
                   - key: kubernetes.io/role
                     operator: In
                     values:
-                      - ingress
+                      - ingressgen2
       tolerations:
-        - key: "ingress"
+        - key: "ingressgen2"
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
