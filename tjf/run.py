@@ -64,6 +64,10 @@ class Run(Resource):
                 "409 Client Error: Conflict for url"
             ):
                 result = "HTTP 409: an object with the same name exists already", 409
+            elif e.response.status_code == 422 or str(e).startswith(
+                "422 Client Error: Unprocessable Entity for url"
+            ):
+                result = "HTTP 422: wrong schedule time", 422
             else:
                 result = str(e), e.response.status_code
 

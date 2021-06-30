@@ -170,6 +170,14 @@
       stdout: ""
       stderr: ""
 
+- name: "create cronjob with wrong schedule should fail"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=wrong" -f
+      # the server returns 422 (because k8s returns 422) and curl returns 22
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
 - name: "show cronjob, all fields are present"
   tests:
     - cmd: curl -s ${CURL_URL}/show/${CRONJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep name | grep -q ${CRONJOBNAME}
