@@ -120,7 +120,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
       stdout: "2\n"
       stderr: ""
@@ -140,7 +140,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
       stdout: "1\n"
       stderr: ""
@@ -219,7 +219,7 @@
 
 - name: "list jobs, only cronjob is present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp
       retcode: 0
       stdout: |
        [
@@ -265,7 +265,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "schedule" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "schedule" | wc -l
       retcode: 0
       stdout: "4\n"
       stderr: ""
@@ -275,7 +275,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "schedule" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "schedule" | wc -l
       retcode: 0
       stdout: "2\n"
       stderr: ""
@@ -345,11 +345,11 @@
 
 - name: "list jobs, only continuous job is present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep continuous | grep -q true
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep continuous | grep -q true
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status_short | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep status_short | wc -l
       retcode: 0
       stdout: "1\n"
       stderr: ""
@@ -383,7 +383,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
       stdout: "2\n"
       stderr: ""
@@ -393,7 +393,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
       stdout: "1\n"
       stderr: ""
@@ -425,15 +425,15 @@
 
 - name: "list jobs, all 3 types are present"
   tests:
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status_short | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep status_short | wc -l
       retcode: 0
       stdout: "3\n"
       stderr: ""
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q schedule
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep -q schedule
       retcode: 0
       stdout: ""
       stderr: ""
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q continuous
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep -q continuous
       retcode: 0
       stdout: ""
       stderr: ""
@@ -446,7 +446,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
       retcode: 0
       stdout: "2\n"
       stderr: ""
@@ -466,7 +466,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
       retcode: 0
       stdout: "2\n"
       stderr: ""
@@ -486,7 +486,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep namespace | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
       retcode: 0
       stdout: "2\n"
       stderr: ""

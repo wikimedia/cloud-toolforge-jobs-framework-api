@@ -33,7 +33,8 @@ api.add_resource(Delete, "/api/v1/delete/<name>")
 api.add_resource(Flush, "/api/v1/flush/")
 api.add_resource(Containers, "/api/v1/containers/")
 
+# before app startup!
+update_available_containers()
 
 if __name__ == "__main__":
-    update_available_containers()
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
