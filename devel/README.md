@@ -55,7 +55,7 @@ $ kind create cluster --config ~/kind.yaml --image kindest/node:v1.18.19@sha256:
 
   The --image switch lets you select a particular k8s version. The SHA can be obtained from:
   https://github.com/kubernetes-sigs/kind/releases
-  Make sure you deploy the same k8s version that tools/toolsbet use.
+  Make sure you deploy the same k8s version that tools/toolsbeta use.
 
  4) Deploy jobs-api
 
@@ -78,7 +78,7 @@ $ kubectl apply -f devel/kind-deployment-overrides.yaml
 $ devel/setup.sh
 ```
 
- 6) Build jobs-framework-api docker image
+ 6) Build the jobs-framework-api docker image
 
 ```
 $ docker build --tag jobs-api .

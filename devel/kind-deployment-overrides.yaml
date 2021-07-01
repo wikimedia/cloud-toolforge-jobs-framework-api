@@ -30,16 +30,19 @@ spec:
         hostPath:
           path: /var/lib/sss/pipes
           type: Directory
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+          items:
+            - key: nginx.conf
+              path: nginx.conf
+      - name: jobs-api-server-cert
+        secret:
+          secretName: jobs-api-server-cert
       containers:
-        - name: jobs-api
+        - name: webservice
           image: jobs-api:latest
-          # kind works this way
-          # https://iximiuz.com/en/posts/kubernetes-kind-load-docker-image/
           imagePullPolicy: Never
-          ports:
-          - containerPort: 8080
-            name: http
-            protocol: TCP
           volumeMounts:
           - mountPath: /data/project
             name: home
@@ -48,3 +51,18 @@ spec:
             readOnly: true
           - mountPath: /var/lib/sss/pipes
             name: sssd-pipes
+        - name: nginx
+          image: docker-registry.tools.wmflabs.org/nginx:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 30001
+              name: https
+              protocol: TCP
+          volumeMounts:
+          - mountPath: /etc/nginx/ssl
+            name: jobs-api-server-cert
+            readOnly: true
+          - name: nginx-config
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
+            readOnly: true
