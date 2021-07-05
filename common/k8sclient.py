@@ -3,13 +3,7 @@
 
 import os
 import requests
-import urllib3
 import yaml
-
-
-# T253412: Disable warnings about unverifed TLS certs when talking to the
-# Kubernetes API endpoint
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class K8sClient(object):
@@ -48,12 +42,10 @@ class K8sClient(object):
         user = self._find_cfg_obj("users", self.context["user"])
         self.session = requests.Session()
         self.session.cert = (user["client-certificate"], user["client-key"])
-        # T253412: We are deliberately not validating the api endpoint's TLS
-        # certificate. The only way to do this with a self-signed cert is to
-        # pass the path to a CA bundle. We actually *can* do that, but with
-        # python2 we have seen the associated clean up code fail and leave
-        # /tmp full of orphan files.
-        self.session.verify = False
+        self.session.verify = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        self.session.headers[
+            "User-Agent"
+        ] = f"jobs-framework-api python-requests/{requests.__version__}"
 
     def _find_cfg_obj(self, kind, name):
         """Lookup a named object in our config."""
