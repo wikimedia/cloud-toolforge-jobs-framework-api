@@ -18,7 +18,7 @@ import re
 from tjf.containers import container_get_shortname
 import tjf.utils as utils
 from common.k8sclient import K8sClient
-from tjf.labels import labels
+from tjf.labels import generate_labels
 
 JOBNAME_PATTERN = re.compile("^[a-zA-Z0-9-]{1,100}$")
 
@@ -33,8 +33,21 @@ def validate_jobname(jobname: str):
         raise Exception(f"job name doesn't match regex {JOBNAME_PATTERN.pattern}")
 
 
+def _filelog_string(jobname: str, filelog: bool):
+    if filelog:
+        return f" 1>{jobname}.out 2>{jobname}.err"
+
+    return " 1>/dev/null 2>/dev/null"
+
+
+# NOTE: this means the container needs /bin/sh :-S A future person needs to validate/enforce that
+JOB_CMD_WRAPPER = ["/bin/sh", "-c", "--"]
+
+
 class Job:
-    def __init__(self, cmd, image, jobname, ns, username, schedule, cont, k8s_object):
+    def __init__(
+        self, cmd, image, jobname, ns, username, schedule, cont, k8s_object, filelog: bool
+    ):
         self.cmd = cmd
         self.image = image
         self.jobname = jobname
@@ -45,6 +58,7 @@ class Job:
         self.schedule = schedule
         self.cont = cont
         self.k8s_object = k8s_object
+        self.filelog = filelog
 
         if self.schedule is not None:
             self.k8s_type = "cronjobs"
@@ -78,9 +92,18 @@ class Job:
         jobname = metadata["name"]
         namespace = metadata["namespace"]
         user = "".join(namespace.split("-")[1:])
-
-        cmd = podspec["template"]["spec"]["containers"][0]["command"][0]
         image = podspec["template"]["spec"]["containers"][0]["image"]
+
+        _filelog = metadata["labels"].get("jobs.toolforge.org/filelog", "no")
+        if _filelog == "yes":
+            filelog = True
+        else:
+            filelog = False
+
+        # the user specified command should be the last element in the cmd array
+        _cmd = podspec["template"]["spec"]["containers"][0]["command"][-1]
+        # remove log substring, which should be the last thing in the command string
+        cmd = _cmd[: -len(_filelog_string(jobname, filelog))]
 
         return cls(
             cmd=cmd,
@@ -91,12 +114,26 @@ class Job:
             schedule=schedule,
             cont=cont,
             k8s_object=object,
+            filelog=filelog,
         )
 
+    def _generate_job_command(self):
+        k8s_cmd_array = JOB_CMD_WRAPPER.copy()
+        # separation space is returned by  _filelog_string()
+        k8s_cmd_array.append(f"{self.cmd}{_filelog_string(self.jobname, self.filelog)}")
+
+        return k8s_cmd_array
+
     def _get_k8s_podtemplate(self, restartpolicy):
+        labels = generate_labels(
+            jobname=self.jobname,
+            username=self.username,
+            type=self.k8s_type,
+            filelog=self.filelog,
+        )
         return {
             "template": {
-                "metadata": {"labels": labels(self.jobname, self.username, self.k8s_type)},
+                "metadata": {"labels": labels},
                 "spec": {
                     "restartPolicy": restartpolicy,
                     "containers": [
@@ -104,7 +141,7 @@ class Job:
                             "name": self.jobname,
                             "image": self.image,
                             "workingDir": "/data/project/{}".format(self.username),
-                            "command": [self.cmd],
+                            "command": self._generate_job_command(),
                             "env": [
                                 {"name": "HOME", "value": "/data/project/{}".format(self.username)}
                             ],
@@ -122,13 +159,19 @@ class Job:
         }
 
     def _get_k8s_cronjob_object(self):
+        labels = generate_labels(
+            jobname=self.jobname,
+            username=self.username,
+            type=self.k8s_type,
+            filelog=self.filelog,
+        )
         obj = {
             "apiVersion": K8sClient.VERSIONS["cronjobs"],
             "kind": "CronJob",
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
-                "labels": labels(self.jobname, self.username, self.k8s_type),
+                "labels": labels,
             },
             "spec": {
                 "schedule": self.schedule,
@@ -145,32 +188,44 @@ class Job:
         return obj
 
     def _get_k8s_deployment_object(self):
+        labels = generate_labels(
+            jobname=self.jobname,
+            username=self.username,
+            type=self.k8s_type,
+            filelog=self.filelog,
+        )
         obj = {
             "kind": "Deployment",
             "apiVersion": K8sClient.VERSIONS["deployments"],
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
-                "labels": labels(self.jobname, self.username, self.k8s_type),
+                "labels": labels,
             },
             "spec": self._get_k8s_podtemplate(restartpolicy="Always"),
         }
 
         obj["spec"]["replicas"] = 1
         obj["spec"]["selector"] = {
-            "matchLabels": labels(self.jobname, self.username, self.k8s_type),
+            "matchLabels": labels,
         }
 
         return obj
 
     def _get_k8s_job_object(self):
+        labels = generate_labels(
+            jobname=self.jobname,
+            username=self.username,
+            type=self.k8s_type,
+            filelog=self.filelog,
+        )
         obj = {
             "apiVersion": K8sClient.VERSIONS["jobs"],
             "kind": "Job",
             "metadata": {
                 "name": self.jobname,
                 "namespace": self.ns,
-                "labels": labels(self.jobname, self.username, self.k8s_type),
+                "labels": labels,
             },
             "spec": self._get_k8s_podtemplate(restartpolicy="Never"),
         }
@@ -197,6 +252,7 @@ class Job:
             "image": container_get_shortname(self.image),
             "user": self.username,
             "namespace": self.ns,
+            "filelog": f"{self.filelog}",
             "status_short": self.status_short,
             "status_long": self.status_long,
         }

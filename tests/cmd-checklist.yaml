@@ -10,6 +10,9 @@
       IMG: "tf-buster-std"
       SLEEP: "10"
       KUBECTL_ARGS: --kubeconfig=/data/project/test/.kube/config -n tool-test
+      LOG_JOB: logjob
+      LOG_JOB_CMD: log.sh
+      LOG_JOB_CMD_PATH: /data/project/test
 ---
 - name: "list containers"
   tests:
@@ -263,16 +266,17 @@
       retcode: 0
       stdout: |
        [
-           {
-               "name": "cronjob",
-               "cmd": "true",
-               "image": "tf-buster-std",
-               "user": "test",
-               "namespace": "tool-test",
-               "status_short": "Last schedule time: unknown",
-               "status_long": "No pods were created for this job.",
-               "schedule": "*/10 * * * *"
-           }
+          {
+             "cmd" : "true",
+             "filelog" : "False",
+             "image" : "tf-buster-std",
+             "name" : "cronjob",
+             "namespace" : "tool-test",
+             "schedule" : "*/10 * * * *",
+             "status_long" : "No pods were created for this job.",
+             "status_short" : "Last schedule time: unknown",
+             "user" : "test"
+          }
        ]
       stderr: ""
 
@@ -531,6 +535,47 @@
       stdout: "2\n"
       stderr: ""
 
+#
+# commands, filelogs, etc
+#
+- name: job file logging works as expected
+  tests:
+    # cleanup previous exceutions
+    - cmd: rm -f ${LOG_JOB_CMD_PATH}/${LOG_JOB_CMD}
+    - cmd: rm -f ${LOG_JOB_CMD_PATH}/${LOG_JOB}.out
+    - cmd: rm -f ${LOG_JOB_CMD_PATH}/${LOG_JOB}.err
+    # create a dummy script that logs something
+    - cmd: echo "#/bin/sh" > ${LOG_JOB_CMD_PATH}/${LOG_JOB_CMD}
+    - cmd: echo "echo canary" >> ${LOG_JOB_CMD_PATH}/${LOG_JOB_CMD}
+    - cmd: chmod a+x ${LOG_JOB_CMD_PATH}/${LOG_JOB_CMD}
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # wait for the job to run
+    - cmd: sleep ${SLEEP}
+    # verify our canary string has been logged to the file
+    - cmd: grep -q "canary" ${LOG_JOB_CMD_PATH}/${LOG_JOB}.out
+      retcode: 0
+    # the other file was created as well
+    - cmd: ls ${LOG_JOB_CMD_PATH}/${LOG_JOB}.err
+      retcode: 0
+    # verify that a job that uses no logfile doesn't log
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}2" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}"
+      retcode: 0
+      stdout: "201\n"
+      stderr: ""
+    # wait for the job to run
+    - cmd: sleep ${SLEEP}
+    # verify the logfiles weren't created
+    - cmd: ls ${LOG_JOB_CMD_PATH}/${LOG_JOB}2.out
+      retcode: 2
+    - cmd: ls ${LOG_JOB_CMD_PATH}/${LOG_JOB}2.err
+      retcode: 2
+
+#
+# cleanup
+#
 - name: "flush operation all jobs"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}

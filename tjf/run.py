@@ -29,6 +29,7 @@ parser.add_argument("imagename")
 parser.add_argument("schedule")
 parser.add_argument("continuous", type=bool, default=False)
 parser.add_argument("name")
+parser.add_argument("filelog", type=bool, default=False)
 
 
 def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job):
@@ -78,6 +79,7 @@ class Run(Resource):
                 schedule=args.schedule,
                 cont=args.continuous,
                 k8s_object=None,
+                filelog=args.filelog,
             )
 
             result = create_job(user=user, job=job)

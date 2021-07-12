@@ -15,7 +15,7 @@
 #
 
 
-def labels(jobname: str, username: str, type: str):
+def generate_labels(jobname: str, username: str, type: str, filelog: bool):
     obj = {
         "toolforge": "tool",
         "app.kubernetes.io/version": "1",
@@ -29,10 +29,18 @@ def labels(jobname: str, username: str, type: str):
     if jobname is not None:
         obj["app.kubernetes.io/name"] = jobname
 
+    if filelog is True:
+        obj["jobs.toolforge.org/filelog"] = "yes"
+
     return obj
 
 
 def labels_selector(jobname: str, username: str, type: str):
     return ",".join(
-        ["{k}={v}".format(k=k, v=v) for k, v in labels(jobname, username, type).items()]
+        [
+            "{k}={v}".format(k=k, v=v)
+            for k, v in generate_labels(
+                jobname=jobname, username=username, type=type, filelog=False
+            ).items()
+        ]
     )
