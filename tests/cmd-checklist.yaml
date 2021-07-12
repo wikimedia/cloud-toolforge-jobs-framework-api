@@ -30,6 +30,46 @@
       stderr: ""
 
 #
+# job name validation
+#
+- name: invalid job names aren't allowed when running a new job
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=./wrongname" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}" -f
+      retcode: 22
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=wrong_name" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}" -f
+      retcode: 22
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=wrongname@" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}" -f
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+- name: when deleting a job with an invalid name, it is ignored
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/wrong.name -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\"\n"
+      stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/wrong_name -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\"\n"
+      stderr: ""
+
+- name: can't show a job with an invalid name
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/invalid_name -H "${CURL_HDR}" ${CURL_ARGS} -f
+      retcode: 22
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/show/invalid.name -H "${CURL_HDR}" ${CURL_ARGS} -f
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+#
 # normal job
 #
 

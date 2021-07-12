@@ -68,20 +68,22 @@ class Run(Resource):
         if find_job(user=user, jobname=args.name) is not None:
             return "HTTP 409: a job with the same name exists already", 409
 
-        job = Job(
-            cmd=args.cmd,
-            image=container_get_image(args.imagename),
-            jobname=args.name,
-            ns=user.namespace,
-            username=user.name,
-            schedule=args.schedule,
-            cont=args.continuous,
-            k8s_object=None,
-        )
-
         try:
+            job = Job(
+                cmd=args.cmd,
+                image=container_get_image(args.imagename),
+                jobname=args.name,
+                ns=user.namespace,
+                username=user.name,
+                schedule=args.schedule,
+                cont=args.continuous,
+                k8s_object=None,
+            )
+
             result = create_job(user=user, job=job)
         except requests.exceptions.HTTPError as e:
             result = _handle_k8s_exception(e, job)
+        except Exception as e:
+            result = f"ERROR: {str(e)}", 400
 
         return result

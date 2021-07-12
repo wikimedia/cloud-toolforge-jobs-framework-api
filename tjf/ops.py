@@ -15,7 +15,7 @@
 #
 
 from tjf.labels import labels_selector
-from tjf.job import Job
+from tjf.job import Job, validate_jobname
 from tjf.user import User
 import tjf.utils as utils
 
@@ -25,6 +25,12 @@ def create_job(user: User, job: Job):
 
 
 def delete_job(user: User, jobname: str):
+    try:
+        validate_jobname(jobname)
+    except Exception:
+        # invalid job name, ignore
+        return
+
     for object in ["jobs", "cronjobs", "deployments"]:
         user.kapi.delete_objects(object, selector=labels_selector(jobname, user.name, object))
 
@@ -44,6 +50,12 @@ def find_job(user: User, jobname: str):
 
 
 def list_all_jobs(user: User, jobname: str):
+    try:
+        validate_jobname(jobname)
+    except Exception:
+        # invalid job name, ignore
+        return []
+
     job_list = []
 
     for kind in ["jobs", "cronjobs", "deployments"]:

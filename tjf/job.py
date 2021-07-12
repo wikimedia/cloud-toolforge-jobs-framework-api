@@ -14,10 +14,23 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import re
 from tjf.containers import container_get_shortname
 import tjf.utils as utils
 from common.k8sclient import K8sClient
 from tjf.labels import labels
+
+JOBNAME_PATTERN = re.compile("^[a-zA-Z0-9-]{1,100}$")
+
+
+def validate_jobname(jobname: str):
+    if jobname is None:
+        # nothing to validate
+        return
+
+    if not JOBNAME_PATTERN.match(jobname):
+        # TODO: this could be a more 'custom' exception
+        raise Exception(f"job name doesn't match regex {JOBNAME_PATTERN.pattern}")
 
 
 class Job:
@@ -39,6 +52,8 @@ class Job:
             self.k8s_type = "deployments"
         else:
             self.k8s_type = "jobs"
+
+        validate_jobname(self.jobname)
 
     @classmethod
     def from_k8s_object(cls, object: dict, kind: str):
