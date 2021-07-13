@@ -14,6 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import json
 import requests
 from tjf.job import Job
 from flask_restful import Resource, reqparse
@@ -28,6 +29,28 @@ parser.add_argument("imagename")
 parser.add_argument("schedule")
 parser.add_argument("continuous", type=bool, default=False)
 parser.add_argument("name")
+
+
+def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job):
+    json_s = json.dumps(job.get_k8s_object()).encode("utf-8").decode("unicode-escape")
+
+    # hope k8s doesn't change this behavior too often
+    if e.response.status_code == 409 or str(e).startswith("409 Client Error: Conflict for url"):
+        result = "HTTP 409: an object with the same name exists already", 409
+    elif e.response.status_code == 422 or str(e).startswith(
+        "422 Client Error: Unprocessable Entity for url"
+    ):
+        if job.k8s_type == "cronjobs":
+            result = f"HTTP 422: likely wrong schedule time. k8s JSON: {json_s}", 422
+        else:
+            result = f"HTTP 422: likely an internal bug. k8s JSON: {json_s}", 422
+    else:
+        result = (
+            f"HTTP {e.response.status_code}: likely an internal bug: {str(e)}. k8s JSON: {json_s}",
+            e.response.status_code,
+        )
+
+    return result
 
 
 class Run(Resource):
@@ -59,16 +82,6 @@ class Run(Resource):
         try:
             result = create_job(user=user, job=job)
         except requests.exceptions.HTTPError as e:
-            # hope k8s doesn't change this behavior too often
-            if e.response.status_code == 409 or str(e).startswith(
-                "409 Client Error: Conflict for url"
-            ):
-                result = "HTTP 409: an object with the same name exists already", 409
-            elif e.response.status_code == 422 or str(e).startswith(
-                "422 Client Error: Unprocessable Entity for url"
-            ):
-                result = "HTTP 422: wrong schedule time", 422
-            else:
-                result = str(e), e.response.status_code
+            result = _handle_k8s_exception(e, job)
 
         return result
