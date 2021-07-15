@@ -35,7 +35,7 @@ def validate_jobname(jobname: str):
 
 def _filelog_string(jobname: str, filelog: bool):
     if filelog:
-        return f" 1>{jobname}.out 2>{jobname}.err"
+        return f" 1>>{jobname}.out 2>>{jobname}.err"
 
     return " 1>/dev/null 2>/dev/null"
 
