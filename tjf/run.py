@@ -22,6 +22,7 @@ from tjf.containers import container_validate, container_get_image
 from tjf.user import User
 from tjf.ops import find_job, create_job
 
+
 # arguments that the API understands
 parser = reqparse.RequestParser()
 parser.add_argument("cmd")
@@ -30,6 +31,8 @@ parser.add_argument("schedule")
 parser.add_argument("continuous", type=bool, default=False)
 parser.add_argument("name")
 parser.add_argument("filelog", type=bool, default=False)
+parser.add_argument("memory")
+parser.add_argument("cpu")
 
 
 def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job):
@@ -80,6 +83,8 @@ class Run(Resource):
                 cont=args.continuous,
                 k8s_object=None,
                 filelog=args.filelog,
+                memory=args.memory,
+                cpu=args.cpu,
             )
 
             result = create_job(user=user, job=job)

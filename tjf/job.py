@@ -42,11 +42,24 @@ def _filelog_string(jobname: str, filelog: bool):
 
 # NOTE: this means the container needs /bin/sh :-S A future person needs to validate/enforce that
 JOB_CMD_WRAPPER = ["/bin/sh", "-c", "--"]
+JOB_DEFAULT_MEMORY = "512Mi"
+JOB_DEFAULT_CPU = "500m"
 
 
 class Job:
     def __init__(
-        self, cmd, image, jobname, ns, username, schedule, cont, k8s_object, filelog: bool
+        self,
+        cmd,
+        image,
+        jobname,
+        ns,
+        username,
+        schedule,
+        cont,
+        k8s_object,
+        filelog: bool,
+        memory: str,
+        cpu: str,
     ):
         self.cmd = cmd
         self.image = image
@@ -59,6 +72,8 @@ class Job:
         self.cont = cont
         self.k8s_object = k8s_object
         self.filelog = filelog
+        self.memory = memory
+        self.cpu = cpu
 
         if self.schedule is not None:
             self.k8s_type = "cronjobs"
@@ -68,6 +83,8 @@ class Job:
             self.k8s_type = "jobs"
 
         validate_jobname(self.jobname)
+        utils.validate_kube_quant(self.memory)
+        utils.validate_kube_quant(self.cpu)
 
     @classmethod
     def from_k8s_object(cls, object: dict, kind: str):
@@ -105,6 +122,11 @@ class Job:
         # remove log substring, which should be the last thing in the command string
         cmd = _cmd[: -len(_filelog_string(jobname, filelog))]
 
+        resources = podspec["template"]["spec"]["containers"][0].get("resources", {})
+        resources_limits = resources.get("limits", {})
+        memory = resources_limits.get("memory", JOB_DEFAULT_MEMORY)
+        cpu = resources_limits.get("cpu", JOB_DEFAULT_CPU)
+
         return cls(
             cmd=cmd,
             image=image,
@@ -115,6 +137,8 @@ class Job:
             cont=cont,
             k8s_object=object,
             filelog=filelog,
+            memory=memory,
+            cpu=cpu,
         )
 
     def _generate_job_command(self):
@@ -123,6 +147,31 @@ class Job:
         k8s_cmd_array.append(f"{self.cmd}{_filelog_string(self.jobname, self.filelog)}")
 
         return k8s_cmd_array
+
+    def _generate_container_resources(self):
+        # this function was adapted from toollabs-webservice toolsws/backends/kubernetes.py
+        container_resources = {}
+
+        if self.memory or self.cpu:
+            container_resources = {"limits": {}, "requests": {}}
+
+        if self.memory:
+            dec_mem = utils.parse_quantity(self.memory)
+            if dec_mem < utils.parse_quantity(JOB_DEFAULT_MEMORY):
+                container_resources["requests"]["memory"] = self.memory
+            else:
+                container_resources["requests"]["memory"] = str(dec_mem / 2)
+            container_resources["limits"]["memory"] = self.memory
+
+        if self.cpu:
+            dec_cpu = utils.parse_quantity(self.cpu)
+            if dec_cpu < utils.parse_quantity(JOB_DEFAULT_CPU):
+                container_resources["requests"]["cpu"] = self.cpu
+            else:
+                container_resources["requests"]["cpu"] = str(dec_cpu / 2)
+            container_resources["limits"]["cpu"] = self.cpu
+
+        return container_resources
 
     def _get_k8s_podtemplate(self, restartpolicy):
         labels = generate_labels(
@@ -142,6 +191,7 @@ class Job:
                             "image": self.image,
                             "workingDir": "/data/project/{}".format(self.username),
                             "command": self._generate_job_command(),
+                            "resources": self._generate_container_resources(),
                             "env": [
                                 {"name": "HOME", "value": "/data/project/{}".format(self.username)}
                             ],
@@ -262,5 +312,11 @@ class Job:
 
         if self.cont:
             obj["continuous"] = True
+
+        if self.memory is not None and self.memory != JOB_DEFAULT_MEMORY:
+            obj["memory"] = self.memory
+
+        if self.cpu is not None and self.cpu != JOB_DEFAULT_CPU:
+            obj["cpu"] = self.cpu
 
         return obj
