@@ -93,12 +93,18 @@ def _refresh_status_job(user: User, job: Job):
         if condition["type"] == "Complete":
             if condition["status"] == "True":
                 job.status_short = "Completed"
+                return
             elif condition["status"] == "False":
                 job.status_short = "Not running"
+                return
 
-    # no conditions?
-    if job.status_short == "Unknown" and status_dict.get("failed", None) is not None:
+    if status_dict.get("failed", None) is not None:
         job.status_short = "Failed"
+        return
+
+    if status_dict.get("active", None) is not None:
+        job.status_short = "Running"
+        return
 
 
 def refresh_job_short_status(user: User, job: Job):
