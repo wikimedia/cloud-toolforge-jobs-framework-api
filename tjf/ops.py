@@ -159,8 +159,11 @@ def refresh_job_long_status(user: User, job: Job):
         state = c
         break
 
+    job.status_long += f" State '{state}'."
+
     reason = containerstatus["state"][state].get("reason", "unknown")
-    job.status_long += f" State '{state}' for reason '{reason}'."
+    if state != "running" or reason != "unknown":
+        job.status_long += f" Reason '{reason}'."
 
     start = containerstatus["state"][state].get("startedAt", "unknown")
     if start != "unknown":
