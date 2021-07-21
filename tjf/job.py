@@ -44,6 +44,8 @@ def _filelog_string(jobname: str, filelog: bool):
 JOB_CMD_WRAPPER = ["/bin/sh", "-c", "--"]
 JOB_DEFAULT_MEMORY = "512Mi"
 JOB_DEFAULT_CPU = "500m"
+# tell kubernetes to delete jobs this many seconds after they finish
+JOB_TTLAFTERFINISHED = 30
 
 
 class Job:
@@ -237,7 +239,7 @@ class Job:
             },
         }
 
-        obj["spec"]["jobTemplate"]["spec"]["ttlSecondsAfterFinished"] = 0
+        obj["spec"]["jobTemplate"]["spec"]["ttlSecondsAfterFinished"] = JOB_TTLAFTERFINISHED
         obj["spec"]["jobTemplate"]["spec"]["backoffLimit"] = 1
 
         return obj
@@ -285,8 +287,7 @@ class Job:
             "spec": self._get_k8s_podtemplate(restartpolicy="Never"),
         }
 
-        # delete job when it finishes. This somewhat mimics grid behavior, no?
-        obj["spec"]["ttlSecondsAfterFinished"] = 0
+        obj["spec"]["ttlSecondsAfterFinished"] = JOB_TTLAFTERFINISHED
         obj["spec"]["backoffLimit"] = 1
 
         return obj
