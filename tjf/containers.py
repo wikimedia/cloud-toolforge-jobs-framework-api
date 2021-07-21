@@ -93,6 +93,10 @@ def container_get_shortname(image):
         if container.get("image") == image:
             return container.get("shortname")
 
+    # this is only called in the k8s --> user path. If the job was created in the past we may
+    # no longer have the container available for us. Print something to indicate that.
+    return "unknown"
+
 
 class Containers(Resource):
     def get(self):
