@@ -8,7 +8,7 @@
       CRONJOBNAME: "cronjob"
       CONTJOBNAME: "continuousjob"
       IMG: "tf-buster-std"
-      SLEEP: "10"
+      SLEEP: "5"
       KUBECTL_ARGS: --kubeconfig=/data/project/test/.kube/config -n tool-test
       LOG_JOB: logjob
       LOG_JOB_CMD: log.sh
@@ -170,7 +170,7 @@
 
 - name: verify status report on wrong job
   tests:
-    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep short | grep -q Unknown
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME}2 -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep status_short | grep -q Failed
       retcode: 0
       stdout: ""
       stderr: ""
