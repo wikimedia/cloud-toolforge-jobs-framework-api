@@ -122,6 +122,11 @@ class Job:
         # remove log substring, which should be the last thing in the command string
         cmd = _cmd[: -len(_filelog_string(jobname, filelog))]
 
+        # if the job was created in the past with a different command format, we may have fail
+        # to parse it. Show something to users
+        if cmd is None or cmd == "":
+            cmd = "unknown"
+
         resources = podspec["template"]["spec"]["containers"][0].get("resources", {})
         resources_limits = resources.get("limits", {})
         memory = resources_limits.get("memory", JOB_DEFAULT_MEMORY)
