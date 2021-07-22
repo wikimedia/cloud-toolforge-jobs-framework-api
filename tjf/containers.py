@@ -14,58 +14,22 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import requests
+import yaml
 from tjf.user import User
 from flask_restful import Resource
 
-# We could maintain this harcoded list by hand, similar to what we do for tools-webservices
-# or we could store this information in a kubernetes configmap, or kind of a middle ground:
-# fetch containers from our docker registry an generate the list at startup time.
-# This could enable a kind of simple workflow: restart the API to reload the available containers.
-
-BASE_FQDN = "docker-registry.tools.wmflabs.org"
-BASE_URL = f"https://{BASE_FQDN}"
-CATALOG_URL = f"{BASE_URL}/v2/_catalog"
-
+# The ConfigMap is only read at startup. Restart the webservice to reload the available containers.
+CONFIGMAP_FILE = "/etc/containers.yaml"
 AVAILABLE_CONTAINERS = []
 
 
-def image_is_interesting(imagename: str):
-    if imagename.startswith("wikimedia-"):
-        # example: 'wikimedia-buster'
-        return True
-    if imagename.startswith("toolforge-"):
-        if imagename.endswith("sssd-base"):
-            # example: 'toolforge-php73-sssd-base'
-            return True
-        if imagename.endswith("standalone"):
-            # example: 'toolforge-buster-standalone'
-            return True
-
-    return False
-
-
 def update_available_containers():
-    # let this raise an exception if something wrongs happens
-    r = requests.get(CATALOG_URL)
-    r.raise_for_status()
+    with open(CONFIGMAP_FILE) as f:
+        yaml_data = yaml.safe_load(f.read())
 
-    catalog = r.json()
-    if catalog.get("repositories") is None:
-        raise Exception("Couldn't understand the catalog format")
-
-    for image in catalog.get("repositories"):
-        if not image_is_interesting(image):
-            # not interested in this image
-            continue
-
-        shortname = (
-            image.replace("toolforge-", "tf-")
-            .replace("-standalone", "-std")
-            .replace("-sssd-base", "")
-            .replace("wikimedia-", "wm-")
-        )
-        image = f"{BASE_FQDN}/{image}:latest"
+    for i in yaml_data:
+        shortname = i["shortname"]
+        image = i["image"]
 
         entry = {"shortname": shortname, "image": image}
 
@@ -73,7 +37,7 @@ def update_available_containers():
         AVAILABLE_CONTAINERS.append(entry)
 
     if len(AVAILABLE_CONTAINERS) < 1:
-        raise Exception(f"Couldn't generate available containers from {CATALOG_URL}")
+        raise Exception("Empty list of available containers")
 
 
 def container_get_image(shortname):

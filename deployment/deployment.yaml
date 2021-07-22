@@ -67,6 +67,53 @@ data:
         }
     }
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobs-api-containers
+  namespace: jobs-api
+data:
+  containers.yaml: |
+    ---
+    - shortname: tf-buster-std
+      image: docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest
+    - shortname: tf-golang
+      image: docker-registry.tools.wmflabs.org/toolforge-golang-sssd-base:latest
+    - shortname: tf-golang111
+      image: docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest
+    - shortname: tf-jdk11
+      image: docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
+    - shortname: tf-jdk8-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-jdk8-sssd-base:latest
+    - shortname: tf-node10
+      image: docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest
+    - shortname: tf-node6-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-node6-sssd-base:latest
+    - shortname: tf-php5-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-php5-sssd-base:latest
+    - shortname: tf-php72-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-php72-sssd-base:latest
+    - shortname: tf-php73
+      image: docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest
+    - shortname: tf-python2-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-python2-sssd-base:latest
+    - shortname: tf-python34-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-python34-sssd-base:latest
+    - shortname: tf-python35-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-python35-sssd-base:latest
+    - shortname: tf-python37
+      image: docker-registry.tools.wmflabs.org/toolforge-python37-sssd-base:latest
+    - shortname: tf-ruby21-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/toolforge-ruby21-sssd-base:latest
+    - shortname: tf-ruby25
+      image: docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest
+    - shortname: tf-tcl86
+      image: docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest
+    - shortname: wm-buster
+      image: docker-registry.tools.wmflabs.org/wikimedia-buster:latest
+    - shortname: wm-stretch-DEPRECATED
+      image: docker-registry.tools.wmflabs.org/wikimedia-stretch:latest
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -107,6 +154,12 @@ spec:
       - name: jobs-api-server-cert
         secret:
           secretName: jobs-api-server-cert
+      - name: jobs-api-containers
+        configMap:
+          name: jobs-api-containers
+          items:
+            - key: containers.yaml
+              path: containers.yaml
       containers:
         - name: webservice
           image: docker-registry.tools.wmflabs.org/toolforge-jobs-framework-api:latest
@@ -119,6 +172,10 @@ spec:
             readOnly: true
           - mountPath: /var/lib/sss/pipes
             name: sssd-pipes
+          - name: jobs-api-containers
+            mountPath: /etc/containers.yaml
+            subPath: containers.yaml
+            readOnly: true
         - name: nginx
           image: docker-registry.tools.wmflabs.org/nginx:latest
           imagePullPolicy: Always
