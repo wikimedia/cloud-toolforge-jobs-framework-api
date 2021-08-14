@@ -18,6 +18,7 @@ class K8sClient(object):
         "jobs": "batch/v1",
         # this is v1beta1 in k8s 1.18, v1 in k8s >= 1.19
         "cronjobs": "batch/v1beta1",
+        "limitranges": "v1",
     }
 
     @classmethod
@@ -88,6 +89,14 @@ class K8sClient(object):
         r = self.session.delete(**self._make_kwargs(url, **kwargs))
         r.raise_for_status()
         return r.status_code
+
+    def get_object(self, kind, name):
+        """Get the object with the specified name and of the given kind in the namespace."""
+        return self._get(
+            kind,
+            name=name,
+            version=K8sClient.VERSIONS[kind],
+        )
 
     def get_objects(self, kind, selector=None):
         """Get list of objects of the given kind in the namespace."""

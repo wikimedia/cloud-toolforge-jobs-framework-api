@@ -247,3 +247,24 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
   name: test
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tool-test
+  namespace: tool-test
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 150m
+        memory: 256Mi
+      max:
+        cpu: 1
+        memory: 4Gi
+      min:
+        cpu: 50m
+        memory: 100Mi
