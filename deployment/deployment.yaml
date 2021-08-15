@@ -75,16 +75,22 @@ metadata:
 data:
   containers.yaml: |
     ---
+    - shortname: tf-bullseye-std
+      image: docker-registry.tools.wmflabs.org/toolforge-bullseye-standalone:latest
     - shortname: tf-buster-std
       image: docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest
     - shortname: tf-golang
       image: docker-registry.tools.wmflabs.org/toolforge-golang-sssd-base:latest
     - shortname: tf-golang111
       image: docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest
+    - shortname: tf-jdk17
+      image: docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
     - shortname: tf-jdk11
       image: docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
     - shortname: tf-jdk8-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-jdk8-sssd-base:latest
+    - shortname: tf-node12
+      image: docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base:latest
     - shortname: tf-node10
       image: docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest
     - shortname: tf-node6-DEPRECATED
@@ -95,6 +101,8 @@ data:
       image: docker-registry.tools.wmflabs.org/toolforge-php72-sssd-base:latest
     - shortname: tf-php73
       image: docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest
+    - shortname: tf-php74
+      image: docker-registry.tools.wmflabs.org/toolforge-php74-sssd-base:latest
     - shortname: tf-python2-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-python2-sssd-base:latest
     - shortname: tf-python34-DEPRECATED
@@ -103,12 +111,18 @@ data:
       image: docker-registry.tools.wmflabs.org/toolforge-python35-sssd-base:latest
     - shortname: tf-python37
       image: docker-registry.tools.wmflabs.org/toolforge-python37-sssd-base:latest
+    - shortname: tf-python39
+      image: docker-registry.tools.wmflabs.org/toolforge-python39-sssd-base:latest
     - shortname: tf-ruby21-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-ruby21-sssd-base:latest
     - shortname: tf-ruby25
       image: docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest
+    - shortname: tf-ruby27
+      image: docker-registry.tools.wmflabs.org/toolforge-ruby27-sssd-base:latest
     - shortname: tf-tcl86
       image: docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest
+    - shortname: wm-bullseye
+      image: docker-registry.tools.wmflabs.org/wikimedia-bullseye:latest
     - shortname: wm-buster
       image: docker-registry.tools.wmflabs.org/wikimedia-buster:latest
     - shortname: wm-stretch-DEPRECATED
