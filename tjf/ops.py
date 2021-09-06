@@ -20,7 +20,32 @@ from tjf.user import User
 import tjf.utils as utils
 
 
+def validate_job_limits(user: User, job: Job):
+    limits = user.kapi.get_object("limitranges", name=user.namespace)["spec"]["limits"]
+
+    for limit in limits:
+        if limit["type"] != "Container":
+            continue
+
+        max_limits = limit["max"]
+        if "cpu" in max_limits and job.cpu:
+            cpu_max = max_limits["cpu"]
+            if utils.parse_quantity(job.cpu) > utils.parse_quantity(cpu_max):
+                raise Exception(
+                    f"Requested CPU {job.cpu} is over maximum allowed per container ({cpu_max})"
+                )
+
+        if "memory" in max_limits and job.memory:
+            memory_max = max_limits["memory"]
+            if utils.parse_quantity(job.memory) > utils.parse_quantity(memory_max):
+                raise Exception(
+                    f"Requested memory {job.memory} is over maximum"
+                    + f"allowed per container ({memory_max})"
+                )
+
+
 def create_job(user: User, job: Job):
+    validate_job_limits(user, job)
     return user.kapi.create_object(job.k8s_type, job.get_k8s_object())
 
 
