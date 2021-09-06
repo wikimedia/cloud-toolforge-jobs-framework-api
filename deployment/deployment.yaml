@@ -84,7 +84,7 @@ data:
     - shortname: tf-golang111
       image: docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest
     - shortname: tf-jdk17
-      image: docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
+      image: docker-registry.tools.wmflabs.org/toolforge-jdk17-sssd-base:latest
     - shortname: tf-jdk11
       image: docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
     - shortname: tf-jdk8-DEPRECATED
