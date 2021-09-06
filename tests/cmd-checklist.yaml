@@ -9,7 +9,7 @@
       CONTJOBNAME: "continuousjob"
       IMG: "tf-buster-std"
       SLEEP: "5"
-      KUBECTL_ARGS: --kubeconfig=/data/project/test/.kube/config -n tool-test
+      KUBECTL_ARGS: -n tool-test
       LOG_JOB: logjob
       LOG_JOB_CMD: log.sh
       LOG_JOB_CMD_PATH: /data/project/test
