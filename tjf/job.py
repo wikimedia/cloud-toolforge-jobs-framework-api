@@ -110,7 +110,7 @@ class Job:
         metadata = utils.dict_get_object(object, "metadata")
         jobname = metadata["name"]
         namespace = metadata["namespace"]
-        user = "".join(namespace.split("-")[1:])
+        user = "".join(namespace.split("-", 1)[1:])
         image = podspec["template"]["spec"]["containers"][0]["image"]
 
         _filelog = metadata["labels"].get("jobs.toolforge.org/filelog", "no")
