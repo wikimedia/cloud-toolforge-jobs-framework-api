@@ -22,7 +22,7 @@ If you are running the server locally (see instructions in devel/README.md) then
 to override the env, something like this:
 
 ```
-$ DOCKER=$(docker port kind-control-plane | grep 6443 | awk -F'> ' '{print $2}) ; sed -i s@https://kind-control-plane:6443@https://${DOCKER}@g /data/project/test/.kube/config
+$ DOCKER=$(docker port kind-control-plane | grep 6443 | awk -F'> ' '{print $2}') ; sed -i s@https://kind-control-plane:6443@https://${DOCKER}@g /data/project/test/.kube/config
 $ python3 api.py
 $ CURL_HDR="ssl-client-subject-dn: CN=test,0=Toolforge" CURL_URL="http://localhost:8080/api/v1" CURL_ARGS="" tests/cmd-checklist-runner.py --config-file tests/cmd-checklist.yaml
 ```

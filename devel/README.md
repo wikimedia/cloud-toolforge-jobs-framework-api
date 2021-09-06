@@ -95,13 +95,7 @@ $ docker build --tag jobs-api .
 $ kind load docker-image jobs-api:latest
 ```
 
- 8) Deploy the whole jobs-api setup into kubernetes
-
-```
-$ kubectl apply -f deployment/deployment-kind-local.yaml
-```
-
- 9) At this point, hopefully, it should work:
+ 8) At this point, hopefully, it should work:
 
 ```
 $ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers/ \
@@ -111,6 +105,10 @@ $ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers
   --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1
 ```
 
- 10) Development iteration:
+ 9) Development iteration:
 
- Make code changes, and follow from step 6 onwards.
+ Make code changes, and follow from step 6 onwards. Probably something like this:
+
+```
+$ docker build --tag jobs-api . ; kind load docker-image jobs-api:latest ; kubectl -n jobs-api delete pods --all
+```
