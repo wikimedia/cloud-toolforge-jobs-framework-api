@@ -16,7 +16,7 @@ class K8sClient(object):
         "replicasets": "apps/v1",
         "services": "v1",
         "jobs": "batch/v1",
-        # this is v1beta1 in k8s 1.18, v1 in k8s >= 1.19
+        # this is v1beta1 in k8s 1.18, v1 in k8s >= 1.21
         "cronjobs": "batch/v1beta1",
         "limitranges": "v1",
     }
