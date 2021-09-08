@@ -121,12 +121,6 @@ data:
       image: docker-registry.tools.wmflabs.org/toolforge-ruby27-sssd-base:latest
     - shortname: tf-tcl86
       image: docker-registry.tools.wmflabs.org/toolforge-tcl86-sssd-base:latest
-    - shortname: wm-bullseye
-      image: docker-registry.tools.wmflabs.org/wikimedia-bullseye:latest
-    - shortname: wm-buster-DEPRECATED
-      image: docker-registry.tools.wmflabs.org/wikimedia-buster:latest
-    - shortname: wm-stretch-DEPRECATED
-      image: docker-registry.tools.wmflabs.org/wikimedia-stretch:latest
 ---
 apiVersion: apps/v1
 kind: Deployment
