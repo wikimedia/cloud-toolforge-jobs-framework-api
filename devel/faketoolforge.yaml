@@ -268,3 +268,83 @@ spec:
       min:
         cpu: 50m
         memory: 100Mi
+---
+# This has been copied from ops/puppet.git
+# specifically: modules/kubeadm/files/psp/base-pod-security-policies.yaml
+# more info at https://wikitech.wikimedia.org/wiki/Portal:Toolforge/Admin/Kubernetes/RBAC_and_PSP
+#
+# PSP primarily for use for future admin-controlled services that don't need
+# highly privileged access to things. May also be useful for testing by binding
+# a role and binding with kubectl. Toolforge user access is granted by
+# maintain-kubeusers so that it locks allowed fsgroup and uids to their actual
+# uid/gid.
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'runtime/default'
+  name: default
+spec:
+  requiredDropCapabilities:
+  - ALL
+  allowPrivilegeEscalation: false
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  volumes:
+  - 'configMap'
+  - 'downwardAPI'
+  - 'emptyDir'
+  - 'projected'
+  - 'secret'
+  # Restrict host paths by default
+  allowedHostPaths:
+  - pathPrefix: '/var/lib/sss/pipes'
+    readOnly: false
+  - pathPrefix: '/data/project'
+    readOnly: false
+  - pathPrefix: '/public/dumps'
+    readOnly: false
+  - pathPrefix: '/public/scratch'
+    readOnly: false
+  - pathPrefix: '/etc/wmcs-project'
+    readOnly: true
+  - pathPrefix: '/etc/ldap.yaml'
+    readOnly: true
+  - pathPrefix: '/etc/novaobserver.yaml'
+    readOnly: true
+  - pathPrefix: '/etc/ldap.conf'
+    readOnly: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: default
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - default
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
