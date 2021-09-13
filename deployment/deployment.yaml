@@ -6,12 +6,35 @@ metadata:
   namespace: jobs-api
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: Role
+metadata:
+  name: jobs-api
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - default
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - watch
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
   name: jobs-api-psp
+  namespace: jobs-api
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: default
 subjects:
 - kind: ServiceAccount
