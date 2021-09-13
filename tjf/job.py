@@ -33,6 +33,17 @@ def validate_jobname(jobname: str):
         raise Exception(f"job name doesn't match regex {JOBNAME_PATTERN.pattern}")
 
 
+def validate_emails(emails: str):
+    if emails is None:
+        # nothing to validate
+        return
+
+    values = ["none", "all", "onfailure", "onfinish"]
+    if emails not in values:
+        # TODO: this could be a more custom exception
+        raise Exception(f"emails value not supported. We only understand: {values}")
+
+
 def _filelog_string(jobname: str, filelog: bool):
     if filelog:
         return f" 1>>{jobname}.out 2>>{jobname}.err"
@@ -62,6 +73,7 @@ class Job:
         filelog: bool,
         memory: str,
         cpu: str,
+        emails: str,
     ):
         self.cmd = cmd
         self.image = image
@@ -76,6 +88,10 @@ class Job:
         self.filelog = filelog
         self.memory = memory
         self.cpu = cpu
+        self.emails = emails
+
+        if self.emails is None:
+            self.emails = "none"
 
         if self.schedule is not None:
             self.k8s_type = "cronjobs"
@@ -85,6 +101,7 @@ class Job:
             self.k8s_type = "jobs"
 
         validate_jobname(self.jobname)
+        validate_emails(self.emails)
         utils.validate_kube_quant(self.memory)
         utils.validate_kube_quant(self.cpu)
 
@@ -119,6 +136,8 @@ class Job:
         else:
             filelog = False
 
+        emails = metadata["labels"].get("jobs.toolforge.org/emails", "none")
+
         # the user specified command should be the last element in the cmd array
         _cmd = podspec["template"]["spec"]["containers"][0]["command"][-1]
         # remove log substring, which should be the last thing in the command string
@@ -146,6 +165,7 @@ class Job:
             filelog=filelog,
             memory=memory,
             cpu=cpu,
+            emails=emails,
         )
 
     def _generate_job_command(self):
@@ -186,6 +206,7 @@ class Job:
             username=self.username,
             type=self.k8s_type,
             filelog=self.filelog,
+            emails=self.emails,
         )
         return {
             "template": {
@@ -221,6 +242,7 @@ class Job:
             username=self.username,
             type=self.k8s_type,
             filelog=self.filelog,
+            emails=self.emails,
         )
         obj = {
             "apiVersion": K8sClient.VERSIONS["cronjobs"],
@@ -250,6 +272,7 @@ class Job:
             username=self.username,
             type=self.k8s_type,
             filelog=self.filelog,
+            emails=self.emails,
         )
         obj = {
             "kind": "Deployment",
@@ -275,6 +298,7 @@ class Job:
             username=self.username,
             type=self.k8s_type,
             filelog=self.filelog,
+            emails=self.emails,
         )
         obj = {
             "apiVersion": K8sClient.VERSIONS["jobs"],
@@ -311,6 +335,7 @@ class Job:
             "filelog": f"{self.filelog}",
             "status_short": self.status_short,
             "status_long": self.status_long,
+            "emails": self.emails,
         }
 
         if self.schedule is not None:

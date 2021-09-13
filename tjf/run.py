@@ -33,6 +33,7 @@ parser.add_argument("name")
 parser.add_argument("filelog", type=bool, default=False)
 parser.add_argument("memory")
 parser.add_argument("cpu")
+parser.add_argument("emails")
 
 
 def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job):
@@ -85,6 +86,7 @@ class Run(Resource):
                 filelog=args.filelog,
                 memory=args.memory,
                 cpu=args.cpu,
+                emails=args.emails,
             )
 
             result = create_job(user=user, job=job)
