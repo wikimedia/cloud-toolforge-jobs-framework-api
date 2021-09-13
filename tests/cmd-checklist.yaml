@@ -7,7 +7,7 @@
       NORMALJOB_CMD: ./sleep.sh
       CRONJOBNAME: "cronjob"
       CONTJOBNAME: "continuousjob"
-      IMG: "tf-buster-std"
+      IMG: "tf-bullseye-std"
       SLEEP: "5"
       KUBECTL_ARGS: -n tool-test
       LOG_JOB: logjob
@@ -269,7 +269,7 @@
           {
              "cmd" : "true",
              "filelog" : "False",
-             "image" : "tf-buster-std",
+             "image" : "tf-bullseye-std",
              "name" : "cronjob",
              "namespace" : "tool-test",
              "schedule" : "*/10 * * * *",
