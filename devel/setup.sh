@@ -13,7 +13,7 @@ sudo sh -c "echo 'toolsbeta' > /etc/wmcs-project"
 
 sudo mkdir -p /var/lib/sss/pipes/
 
-sudo mkdir -p /data/project/
+sudo mkdir -p /data/project/${USER}
 sudo chmod -R a+wx /data/project/
 
 cat <<EOF > /data/project/${USER}/sleep40.sh
