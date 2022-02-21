@@ -29,7 +29,7 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
 
 #
@@ -54,11 +54,11 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/wrong.name -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/wrong_name -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
 
 - name: can't show a job with an invalid name
@@ -80,7 +80,7 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
 
 - name: "create duplicated normal job should fail"
@@ -130,14 +130,14 @@
   tests:
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep status_short | wc -l
       retcode: 0
-      stdout: "1\n"
+      stdout: "1"
       stderr: ""
 
 - name: "delete normal job"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -154,18 +154,18 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # note this one has a wrong CMD
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}2" -d "imagename=${IMG}" -d "cmd=wrong"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "2"
       stderr: ""
 
 - name: verify status report on wrong job
@@ -179,17 +179,17 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
-      stdout: "1\n"
+      stdout: "1"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
 
 #
@@ -200,7 +200,7 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/10 * * * *"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -262,9 +262,10 @@
 
 - name: "list jobs, only cronjob is present"
   tests:
+    # trailing echo helps with stdout comparision
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp
       retcode: 0
-      stdout: |
+      stdout: >-
        [
           {
              "cmd" : "true",
@@ -285,7 +286,7 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -302,31 +303,31 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/10 * * * *"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}2" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/9 * * * *"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "schedule" | wc -l
       retcode: 0
-      stdout: "4\n"
+      stdout: "4"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "schedule" | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "2"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
 
 #
@@ -337,7 +338,7 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -346,7 +347,7 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
       retcode: 0
-      stdout: "\"HTTP 409: a job with the same name exists already\"\n"
+      stdout: "\"HTTP 409: a job with the same name exists already\""
       stderr: ""
 
 - name: "show continuous job, all fields are present"
@@ -396,14 +397,14 @@
       stderr: ""
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep status_short | wc -l
       retcode: 0
-      stdout: "1\n"
+      stdout: "1"
       stderr: ""
 
 - name: "delete continuous job"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -420,31 +421,31 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}2" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "2"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
       retcode: 0
-      stdout: "1\n"
+      stdout: "1"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
 
 #
@@ -455,15 +456,15 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -472,7 +473,7 @@
   tests:
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep status_short | wc -l
       retcode: 0
-      stdout: "3\n"
+      stdout: "3"
       stderr: ""
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep -q schedule
       retcode: 0
@@ -487,18 +488,18 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CRONJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "2"
       stderr: ""
     # create again the cronjob to do the reverse test
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -507,18 +508,18 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "2"
       stderr: ""
     # create again the normaljob to continue with tests
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
@@ -527,13 +528,13 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
       retcode: 0
-      stdout: "2\n"
+      stdout: "2"
       stderr: ""
 
 #
@@ -551,7 +552,7 @@
     - cmd: chmod a+x ${LOG_JOB_CMD_PATH}/${LOG_JOB_CMD}
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # wait for the job to run
     - cmd: sleep ${SLEEP}
@@ -564,7 +565,7 @@
     # verify that a job that uses no logfile doesn't log
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}2" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}"
       retcode: 0
-      stdout: "201\n"
+      stdout: "201"
       stderr: ""
     # wait for the job to run
     - cmd: sleep ${SLEEP}
@@ -581,13 +582,13 @@
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "\"\"\n"
+      stdout: "\"\""
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
-      stdout: "[]\n"
+      stdout: "[]"
       stderr: ""
     # give k8s a chance to do its thing. Pods in terminating state can take a long time to go away
     - cmd: sleep ${SLEEP} ; sleep ${SLEEP} ; sleep ${SLEEP}
