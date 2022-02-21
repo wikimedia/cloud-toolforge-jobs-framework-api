@@ -110,5 +110,5 @@ $ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers
  Make code changes, and follow from step 6 onwards. Probably something like this:
 
 ```
-$ docker build --tag jobs-api . ; kind load docker-image jobs-api:latest ; kubectl -n jobs-api delete pods --all
+$ docker build --tag jobs-api . ; kind load docker-image jobs-api:latest ; kubectl -n jobs-api rollout restart deployment/jobs-api
 ```
