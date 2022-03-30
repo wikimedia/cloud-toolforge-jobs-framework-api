@@ -49,6 +49,10 @@
       retcode: 22
       stdout: ""
       stderr: ""
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=Wrongname" -d "imagename=${IMG}" -d "cmd=${NORMALJOB_CMD}" -f
+      retcode: 22
+      stdout: ""
+      stderr: ""
 
 - name: when deleting a job with an invalid name, it is ignored
   tests:
