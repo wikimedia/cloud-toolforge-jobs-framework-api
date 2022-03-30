@@ -39,12 +39,12 @@ spec:
       - name: jobs-api-server-cert
         secret:
           secretName: jobs-api-server-cert
-      - name: jobs-api-containers
+      - name: images
         configMap:
-          name: jobs-api-containers
+          name: images
           items:
-            - key: containers.yaml
-              path: containers.yaml
+            - key: images.yaml
+              path: images.yaml
       containers:
         - name: webservice
           image: jobs-api:latest
@@ -57,9 +57,9 @@ spec:
             readOnly: true
           - mountPath: /var/lib/sss/pipes
             name: sssd-pipes
-          - name: jobs-api-containers
-            mountPath: /etc/containers.yaml
-            subPath: containers.yaml
+          - name: images
+            mountPath: /etc/images.yaml
+            subPath: images.yaml
             readOnly: true
         - name: nginx
           image: docker-registry.tools.wmflabs.org/nginx:latest

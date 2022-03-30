@@ -15,7 +15,7 @@
 #
 
 import re
-from tjf.containers import container_get_shortname
+from tjf.images import image_get_shortname
 import tjf.utils as utils
 from common.k8sclient import K8sClient
 from tjf.labels import generate_labels
@@ -332,7 +332,7 @@ class Job:
         obj = {
             "name": self.jobname,
             "cmd": self.cmd,
-            "image": container_get_shortname(self.image),
+            "image": image_get_shortname(self.image),
             "user": self.username,
             "namespace": self.ns,
             "filelog": f"{self.filelog}",
