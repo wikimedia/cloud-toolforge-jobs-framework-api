@@ -25,17 +25,6 @@
       stdout: ""
       stderr: ""
 
-- name: "list images (compat)"
-  tests:
-    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q shortname
-      retcode: 0
-      stdout: ""
-      stderr: ""
-    - cmd: curl -s ${CURL_URL}/containers/ -H "${CURL_HDR}" ${CURL_ARGS} | grep -q image
-      retcode: 0
-      stdout: ""
-      stderr: ""
-
 - name: "flush everything"
   tests:
     - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}

@@ -70,14 +70,3 @@ class Images(Resource):
             return f"Exception: {e}", 401
 
         return AVAILABLE_IMAGES
-
-
-# TODO: remove this after a compat period
-class Containers(Resource):
-    def get(self):
-        try:
-            user = User.from_request()  # noqa:F841
-        except Exception as e:
-            return f"Exception: {e}", 401
-
-        return AVAILABLE_IMAGES

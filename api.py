@@ -21,7 +21,7 @@ from tjf.show import Show
 from tjf.list import List
 from tjf.delete import Delete
 from tjf.flush import Flush
-from tjf.images import Containers, Images, update_available_images
+from tjf.images import Images, update_available_images
 
 app = Flask(__name__)
 api = Api(app)
@@ -31,7 +31,6 @@ api.add_resource(Show, "/api/v1/show/<name>")
 api.add_resource(List, "/api/v1/list/")
 api.add_resource(Delete, "/api/v1/delete/<name>")
 api.add_resource(Flush, "/api/v1/flush/")
-api.add_resource(Containers, "/api/v1/containers/")
 api.add_resource(Images, "/api/v1/images/")
 
 # before app startup!
