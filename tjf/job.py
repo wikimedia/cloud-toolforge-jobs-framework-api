@@ -225,16 +225,6 @@ class Job:
                             "workingDir": "/data/project/{}".format(self.username),
                             "command": self._generate_job_command(),
                             "resources": self._generate_container_resources(),
-                            "env": [
-                                {"name": "HOME", "value": "/data/project/{}".format(self.username)}
-                            ],
-                            "volumeMounts": [{"mountPath": "/data/project", "name": "home"}],
-                        }
-                    ],
-                    "volumes": [
-                        {
-                            "name": "home",
-                            "hostPath": {"path": "/data/project", "type": "Directory"},
                         }
                     ],
                 },
