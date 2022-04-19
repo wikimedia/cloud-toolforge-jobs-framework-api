@@ -23,7 +23,7 @@ from tjf.labels import generate_labels
 # This is a restriction by Kubernetes:
 # a lowercase RFC 1123 subdomain must consist of lower case alphanumeric
 # characters, '-' or '.', and must start and end with an alphanumeric character
-JOBNAME_PATTERN = re.compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*")
+JOBNAME_PATTERN = re.compile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$")
 
 
 def validate_jobname(jobname: str):
