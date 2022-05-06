@@ -118,6 +118,8 @@ data:
       image: docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest
     - shortname: tf-node6-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-node6-sssd-base:latest
+    - shortname: tf-perl532
+      image: docker-registry.tools.wmflabs.org/toolforge-perl532-sssd-base:latest
     - shortname: tf-php5-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-php5-sssd-base:latest
     - shortname: tf-php72-DEPRECATED
