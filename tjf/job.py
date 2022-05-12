@@ -260,6 +260,7 @@ class Job:
                 "successfulJobsHistoryLimit": 0,
                 "failedJobsHistoryLimit": 0,
                 "concurrencyPolicy": "Forbid",
+                "startingDeadlineSeconds": 30,
                 "jobTemplate": {"spec": self._get_k8s_podtemplate(restartpolicy="Never")},
             },
         }
