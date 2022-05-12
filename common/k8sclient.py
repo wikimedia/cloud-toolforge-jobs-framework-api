@@ -11,13 +11,12 @@ class K8sClient(object):
 
     VERSIONS = {
         "deployments": "apps/v1",
-        "ingresses": "networking.k8s.io/v1beta1",
+        "ingresses": "networking.k8s.io/v1",
         "pods": "v1",
         "replicasets": "apps/v1",
         "services": "v1",
         "jobs": "batch/v1",
-        # this is v1beta1 in k8s 1.18, v1 in k8s >= 1.21
-        "cronjobs": "batch/v1beta1",
+        "cronjobs": "batch/v1",
         "limitranges": "v1",
     }
 
