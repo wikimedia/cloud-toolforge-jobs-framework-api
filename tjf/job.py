@@ -48,6 +48,7 @@ def validate_emails(emails: str):
 
 
 def _filelog_string(jobname: str, filelog: bool):
+    # Note that from_k8s_object() depends on the location of 1>>
     if filelog:
         return f" 1>>{jobname}.out 2>>{jobname}.err"
 
@@ -144,7 +145,7 @@ class Job:
         # the user specified command should be the last element in the cmd array
         _cmd = podspec["template"]["spec"]["containers"][0]["command"][-1]
         # remove log substring, which should be the last thing in the command string
-        cmd = _cmd[: -len(_filelog_string(jobname, filelog))]
+        cmd = _cmd[: _cmd.find(" 1>>")]
 
         # if the job was created in the past with a different command format, we may have fail
         # to parse it. Show something to users
@@ -174,6 +175,7 @@ class Job:
     def _generate_job_command(self):
         k8s_cmd_array = JOB_CMD_WRAPPER.copy()
         # separation space is returned by  _filelog_string()
+        # note that from_k8s_oject() depends on filelog string being at the end of the command
         k8s_cmd_array.append(f"{self.cmd}{_filelog_string(self.jobname, self.filelog)}")
 
         return k8s_cmd_array
