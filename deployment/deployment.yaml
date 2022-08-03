@@ -112,6 +112,8 @@ data:
       image: docker-registry.tools.wmflabs.org/toolforge-jdk11-sssd-base:latest
     - shortname: tf-jdk8-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-jdk8-sssd-base:latest
+    - shortname: tf-node16
+      image: docker-registry.tools.wmflabs.org/toolforge-node16-sssd-base:latest
     - shortname: tf-node12
       image: docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base:latest
     - shortname: tf-node10-DEPRECATED
