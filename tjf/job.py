@@ -15,6 +15,7 @@
 #
 
 import re
+import time
 from tjf.images import image_get_shortname
 import tjf.utils as utils
 from common.k8sclient import K8sClient
@@ -324,6 +325,29 @@ class Job:
             return self._get_k8s_deployment_object()
 
         return self._get_k8s_job_object()
+
+    def get_k8s_single_run_object(self, cronjob_uid):
+        """Returns a Kubernetes manifest to run this CronJob once."""
+        # This is largely based on kubectl code
+        # https://github.com/kubernetes/kubernetes/blob/985c9202ccd250a5fe22c01faf0d8f83d804b9f3/staging/src/k8s.io/kubectl/pkg/cmd/create/create_job.go#L261
+
+        k8s_job_object = self._get_k8s_job_object()
+
+        # Set an unique name
+        k8s_job_object["metadata"]["name"] += f"-{int(time.time())}"
+
+        # Set references to the CronJob object
+        k8s_job_object["metadata"]["annotations"] = {"cronjob.kubernetes.io/instantiate": "manual"}
+        k8s_job_object["metadata"]["ownerReferences"] = [
+            {
+                "apiVersion": K8sClient.VERSIONS["cronjobs"],
+                "kind": "CronJob",
+                "name": self.jobname,
+                "uid": cronjob_uid,
+            }
+        ]
+
+        return k8s_job_object
 
     def get_api_object(self):
         obj = {

@@ -14,6 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import time
 from tjf.labels import labels_selector
 from tjf.job import Job, validate_jobname
 from tjf.user import User
@@ -205,3 +206,50 @@ def refresh_job_long_status(user: User, job: Job):
     msg = containerstatus["state"][state].get("message", "")
     if msg != "":
         job.status_long += f" Additional message:'{msg}'."
+
+
+def _wait_for_pod_exit(user: User, job: Job, timeout: int = 30):
+    """Wait for all pods belonging to a specific job to exit."""
+    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
+
+    for _ in range(timeout * 2):
+        pods = user.kapi.get_objects("pods", selector=selector)
+        if len(pods) == 0:
+            return True
+        time.sleep(0.5)
+    return False
+
+
+def _launch_manual_cronjob(user: User, job: Job):
+    validate_job_limits(user, job)
+
+    cronjob = user.kapi.get_object("cronjobs", job.jobname)
+    metadata = utils.dict_get_object(cronjob, "metadata")
+
+    user.kapi.create_object("jobs", job.get_k8s_single_run_object(metadata["uid"]))
+
+
+def restart_job(user: User, job: Job):
+    if job.k8s_type == "cronjobs":
+        # Delete currently running jobs to avoid duplication
+        user.kapi.delete_objects(
+            "jobs", selector=labels_selector(job.jobname, user.name, job.k8s_type)
+        )
+        user.kapi.delete_objects(
+            "pods", selector=labels_selector(job.jobname, user.name, job.k8s_type)
+        )
+
+        # Wait until the currently running job stops
+        _wait_for_pod_exit(user, job)
+
+        # Launch it manually
+        _launch_manual_cronjob(user, job)
+    elif job.k8s_type == "deployments":
+        # Simply delete the pods and let Kubernetes re-create them
+        user.kapi.delete_objects(
+            "pods", selector=labels_selector(job.jobname, user.name, job.k8s_type)
+        )
+    elif job.k8s_type == "jobs":
+        raise Exception("single jobs can't be restarted")
+    else:
+        raise Exception(f"couldn't restart unknown job type: {job}")
