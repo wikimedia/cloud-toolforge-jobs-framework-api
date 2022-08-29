@@ -38,7 +38,7 @@ def test_output_redirection(
 
     script_path = Path(__file__).parent / "helpers" / "gen-output" / command
 
-    cmd = Command.from_api(str(script_path.absolute()), filelog, "test")
+    cmd = Command.from_api(str(script_path.absolute()), filelog, "test.out", "test.err", "test")
 
     result = subprocess.run(cmd.generate_for_k8s(), capture_output=True, text=True, cwd=directory)
 
@@ -96,6 +96,22 @@ def test_output_redirection(
             "myjob.out",
             "myjob.err",
         ],
+        [
+            "myjob",
+            "./command-by-the-user.sh --with-args",
+            fake_k8s.JOB_CONT_NO_EMAILS_YES_FILELOG_CUSTOM_STDOUT,
+            True,
+            "/data/project/test/logs/myjob.log",
+            "myjob.err",
+        ],
+        [
+            "myjob",
+            "./command-by-the-user.sh --with-args",
+            fake_k8s.JOB_CONT_NO_EMAILS_YES_FILELOG_CUSTOM_STDOUT_STDERR,
+            True,
+            "/dev/null",
+            "logs/customlog.err",
+        ],
     ],
 )
 def test_command_array_parsing_from_k8s(
@@ -107,7 +123,13 @@ def test_command_array_parsing_from_k8s(
 
     for command in [
         Command.from_k8s(k8s_metadata=k8s_metadata, k8s_command=k8s_command),
-        Command.from_api(user_command=user_command, filelog=filelog, jobname=jobname),
+        Command.from_api(
+            user_command=user_command,
+            filelog=filelog,
+            filelog_stdout=filelog_stdout,
+            filelog_stderr=filelog_stderr,
+            jobname=jobname,
+        ),
     ]:
         assert command
         assert command.user_command == user_command

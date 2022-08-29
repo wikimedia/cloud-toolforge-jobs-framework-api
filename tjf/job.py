@@ -124,7 +124,6 @@ class Job:
         user = "".join(namespace.split("-", 1)[1:])
         image = podspec["template"]["spec"]["containers"][0]["image"]
         emails = metadata["labels"].get("jobs.toolforge.org/emails", "none")
-
         resources = podspec["template"]["spec"]["containers"][0].get("resources", {})
         resources_limits = resources.get("limits", {})
         memory = resources_limits.get("memory", JOB_DEFAULT_MEMORY)
@@ -319,6 +318,8 @@ class Job:
             "user": self.username,
             "namespace": self.ns,
             "filelog": f"{self.command.filelog}",
+            "filelog_stdout": self.command.filelog_stdout,
+            "filelog_stderr": self.command.filelog_stderr,
             "status_short": self.status_short,
             "status_long": self.status_long,
             "emails": self.emails,

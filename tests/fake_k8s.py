@@ -272,3 +272,135 @@ JOB_CONT_NO_EMAILS_YES_FILELOG_NEW_ARRAY = {
         },
     },
 }
+JOB_CONT_NO_EMAILS_YES_FILELOG_CUSTOM_STDOUT = {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+        "annotations": {"deployment.kubernetes.io/revision": "1"},
+        "labels": {
+            "app.kubernetes.io/component": "deployments",
+            "app.kubernetes.io/created-by": "test",
+            "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+            "app.kubernetes.io/name": "myjob",
+            "app.kubernetes.io/version": "1",
+            "jobs.toolforge.org/emails": "none",
+            "jobs.toolforge.org/filelog": "yes",
+            "jobs.toolforge.org/command-new-format": "yes",
+            "toolforge": "tool",
+        },
+        "name": "myjob",
+        "namespace": "test-tool",
+    },
+    "spec": {
+        "selector": {
+            "matchLabels": {
+                "app.kubernetes.io/component": "deployments",
+                "app.kubernetes.io/created-by": "test",
+                "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+                "app.kubernetes.io/name": "myjob",
+                "app.kubernetes.io/version": "1",
+                "jobs.toolforge.org/emails": "none",
+                "jobs.toolforge.org/filelog": "yes",
+                "jobs.toolforge.org/command-new-format": "yes",
+                "toolforge": "tool",
+            }
+        },
+        "template": {
+            "metadata": {
+                "labels": {
+                    "app.kubernetes.io/component": "deployments",
+                    "app.kubernetes.io/created-by": "test",
+                    "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+                    "app.kubernetes.io/name": "myjob",
+                    "app.kubernetes.io/version": "1",
+                    "jobs.toolforge.org/emails": "none",
+                    "jobs.toolforge.org/filelog": "yes",
+                    "jobs.toolforge.org/command-new-format": "yes",
+                    "toolforge": "tool",
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "command": [
+                            "/bin/sh",
+                            "-c",
+                            "--",
+                            "exec 1>>/data/project/test/logs/myjob.log;exec 2>>myjob.err;./command-by-the-user.sh --with-args",  # noqa:E501
+                        ],
+                        "image": "docker-registry.tools.wmflabs.org/toolforge-bullseye-sssd:latest",
+                        "imagePullPolicy": "Always",
+                        "name": "myjob",
+                        "workingDir": "/data/project/test",
+                    }
+                ],
+            },
+        },
+    },
+}
+JOB_CONT_NO_EMAILS_YES_FILELOG_CUSTOM_STDOUT_STDERR = {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+        "annotations": {"deployment.kubernetes.io/revision": "1"},
+        "labels": {
+            "app.kubernetes.io/component": "deployments",
+            "app.kubernetes.io/created-by": "test",
+            "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+            "app.kubernetes.io/name": "myjob",
+            "app.kubernetes.io/version": "1",
+            "jobs.toolforge.org/emails": "none",
+            "jobs.toolforge.org/filelog": "yes",
+            "jobs.toolforge.org/command-new-format": "yes",
+            "toolforge": "tool",
+        },
+        "name": "myjob",
+        "namespace": "test-tool",
+    },
+    "spec": {
+        "selector": {
+            "matchLabels": {
+                "app.kubernetes.io/component": "deployments",
+                "app.kubernetes.io/created-by": "test",
+                "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+                "app.kubernetes.io/name": "myjob",
+                "app.kubernetes.io/version": "1",
+                "jobs.toolforge.org/emails": "none",
+                "jobs.toolforge.org/filelog": "yes",
+                "jobs.toolforge.org/command-new-format": "yes",
+                "toolforge": "tool",
+            }
+        },
+        "template": {
+            "metadata": {
+                "labels": {
+                    "app.kubernetes.io/component": "deployments",
+                    "app.kubernetes.io/created-by": "test",
+                    "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
+                    "app.kubernetes.io/name": "myjob",
+                    "app.kubernetes.io/version": "1",
+                    "jobs.toolforge.org/emails": "none",
+                    "jobs.toolforge.org/filelog": "yes",
+                    "jobs.toolforge.org/command-new-format": "yes",
+                    "toolforge": "tool",
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "command": [
+                            "/bin/sh",
+                            "-c",
+                            "--",
+                            "exec 1>>/dev/null;exec 2>>logs/customlog.err;./command-by-the-user.sh --with-args",  # noqa:E501
+                        ],
+                        "image": "docker-registry.tools.wmflabs.org/toolforge-bullseye-sssd:latest",
+                        "imagePullPolicy": "Always",
+                        "name": "myjob",
+                        "workingDir": "/data/project/test",
+                    }
+                ],
+            },
+        },
+    },
+}

@@ -31,6 +31,8 @@ parser.add_argument("schedule")
 parser.add_argument("continuous", type=bool, default=False)
 parser.add_argument("name", required=True)
 parser.add_argument("filelog", type=bool, default=False)
+parser.add_argument("filelog_stdout", type=str, required=False)
+parser.add_argument("filelog_stderr", type=str, required=False)
 parser.add_argument("memory")
 parser.add_argument("cpu")
 parser.add_argument("emails")
@@ -106,9 +108,13 @@ class Run(Resource):
         if find_job(user=user, jobname=args.name) is not None:
             return "HTTP 409: a job with the same name exists already", 409
 
+        command = Command.from_api(
+            args.cmd, args.filelog, args.filelog_stdout, args.filelog_stderr, args.name
+        )
+
         try:
             job = Job(
-                command=Command.from_api(args.cmd, args.filelog, args.name),
+                command=command,
                 image=image_get_url(args.imagename),
                 jobname=args.name,
                 ns=user.namespace,
@@ -126,5 +132,4 @@ class Run(Resource):
             result = _handle_k8s_exception(e, job, user)
         except Exception as e:
             result = f"ERROR: {str(e)}", 400
-
         return result

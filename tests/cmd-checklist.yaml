@@ -11,6 +11,7 @@
       SLEEP: "5"
       KUBECTL_ARGS: -n tool-test
       LOG_JOB: logjob
+      CUSTOM_LOG_FILE: custom-log-file
       LOG_JOB_CMD: log.sh
       TOOLHOME: /data/project/test
 ---
@@ -34,6 +35,8 @@
     - cmd: rm -f ${TOOLHOME}/${LOG_JOB_CMD}
       retcode: 0
     - cmd: rm -f ${TOOLHOME}/${LOG_JOB}*
+      retcode: 0
+    - cmd: rm -f ${TOOLHOME}/${CUSTOM_LOG_FILE}*
       retcode: 0
 
 #
@@ -108,6 +111,8 @@
             && echo "$response" | grep -q '"image": "${IMG}"' \
             && echo "$response" | grep -q '"user": "test"' \
             && echo "$response" | grep -q '"filelog": "False"' \
+            && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
+            && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
             && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
@@ -212,6 +217,8 @@
             && echo "$response" | grep -q '"image": "${IMG}"' \
             && echo "$response" | grep -q '"user": "test"' \
             && echo "$response" | grep -q '"filelog": "False"' \
+            && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
+            && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
             && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
@@ -232,6 +239,8 @@
              "cmd" : "./sleep40.sh",
              "emails" : "none",
              "filelog" : "False",
+             "filelog_stderr" : "/dev/null",
+             "filelog_stdout" : "/dev/null",
              "image" : "tf-bullseye-std",
              "name" : "cronjob",
              "namespace" : "tool-test",
@@ -320,6 +329,8 @@
             && echo "$response" | grep -q '"image": "${IMG}"' \
             && echo "$response" | grep -q '"user": "test"' \
             && echo "$response" | grep -q '"filelog": "False"' \
+            && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
+            && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
             && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
@@ -495,12 +506,54 @@
       stdout: "201"
       stderr: ""
     # wait for the job to run
-    - cmd: sleep ${SLEEP}
+    - cmd: |
+            sleep ${SLEEP}
+            sleep ${SLEEP}
+            sleep ${SLEEP}
     # verify that canary string has been logged to output log
     - cmd: grep -q "canary" ${TOOLHOME}/${LOG_JOB}.out
       retcode: 0
     # verify that error-canary string has been logged to error log
     - cmd: grep -q "error-canary" ${TOOLHOME}/${LOG_JOB}.err
+      retcode: 0
+
+- name: job should log canary and error-canary strings to custom-log-file.out
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}2" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true" -d "filelog_stdout=${TOOLHOME}/${CUSTOM_LOG_FILE}.out" -d "filelog_stderr=${TOOLHOME}/${CUSTOM_LOG_FILE}.out"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+    # wait for the job to run
+    - cmd: |
+            sleep ${SLEEP}
+            sleep ${SLEEP}
+            sleep ${SLEEP}
+    # verify that both canary and error-canary strings were logged to custom-log-file.out
+    - cmd: grep -q "canary" ${TOOLHOME}/${CUSTOM_LOG_FILE}.out
+      retcode: 0
+    - cmd: grep -q "error-canary" ${TOOLHOME}/${CUSTOM_LOG_FILE}.out
+      retcode: 0
+    # verify that custom-log-file.err wasn't created
+    - cmd: ls ${TOOLHOME}/${CUSTOM_LOG_FILE}.err
+      retcode: 2
+
+- name: job should log stdout and stderr to custom log files
+  tests:
+    # run a job that logs canary string to custom-log-file2.out and error-canary string to custom-log-file.err
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}3" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true" -d "filelog_stdout=${TOOLHOME}/${CUSTOM_LOG_FILE}2.out" -d "filelog_stderr=${TOOLHOME}/${CUSTOM_LOG_FILE}.err"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+    # wait for the job to run
+    - cmd: |
+            sleep ${SLEEP}
+            sleep ${SLEEP}
+            sleep ${SLEEP}
+    # verify that canary string was logged to custom-log-file2.out
+    - cmd: grep -q "canary" ${TOOLHOME}/${CUSTOM_LOG_FILE}2.out
+      retcode: 0
+    # verify that error-canary string was logged to custom-log-file.err
+    - cmd: grep -q "error-canary" ${TOOLHOME}/${CUSTOM_LOG_FILE}.err
       retcode: 0
 
 - name: job should not produce logs
@@ -511,7 +564,10 @@
       stdout: "201"
       stderr: ""
     # wait for the job to run
-    - cmd: sleep ${SLEEP}
+    - cmd: |
+            sleep ${SLEEP}
+            sleep ${SLEEP}
+            sleep ${SLEEP}
     # verify the logfiles weren't created
     - cmd: ls ${TOOLHOME}/${LOG_JOB}4.out
       retcode: 2
