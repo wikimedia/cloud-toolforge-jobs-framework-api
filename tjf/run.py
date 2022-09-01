@@ -33,6 +33,7 @@ parser.add_argument("name", required=True)
 parser.add_argument("filelog", type=bool, default=False)
 parser.add_argument("filelog_stdout", type=str, required=False)
 parser.add_argument("filelog_stderr", type=str, required=False)
+parser.add_argument("retry", choices=[0, 1, 2, 3, 4, 5], type=int, default=0)
 parser.add_argument("memory")
 parser.add_argument("cpu")
 parser.add_argument("emails")
@@ -122,6 +123,7 @@ class Run(Resource):
                 schedule=args.schedule,
                 cont=args.continuous,
                 k8s_object=None,
+                retry=args.retry,
                 memory=args.memory,
                 cpu=args.cpu,
                 emails=args.emails,

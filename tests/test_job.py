@@ -17,12 +17,6 @@ def test_invalid_jobname(name):
         validate_jobname(name)
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "totally-valid",
-        "so.is.this",
-    ],
-)
+@pytest.mark.parametrize("name", ["totally-valid", "so.is.this"])
 def test_valid_jobname(name):
     assert validate_jobname(name) is None

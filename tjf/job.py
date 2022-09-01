@@ -66,6 +66,7 @@ class Job:
         schedule,
         cont,
         k8s_object,
+        retry: int,
         memory: str,
         cpu: str,
         emails: str,
@@ -83,6 +84,7 @@ class Job:
         self.memory = memory
         self.cpu = cpu
         self.emails = emails
+        self.retry = retry
 
         if self.emails is None:
             self.emails = "none"
@@ -123,6 +125,7 @@ class Job:
         namespace = metadata["namespace"]
         user = "".join(namespace.split("-", 1)[1:])
         image = podspec["template"]["spec"]["containers"][0]["image"]
+        retry = podspec.get("backoffLimit", 0)
         emails = metadata["labels"].get("jobs.toolforge.org/emails", "none")
         resources = podspec["template"]["spec"]["containers"][0].get("resources", {})
         resources_limits = resources.get("limits", {})
@@ -141,6 +144,7 @@ class Job:
             schedule=schedule,
             cont=cont,
             k8s_object=object,
+            retry=retry,
             memory=memory,
             cpu=cpu,
             emails=emails,
@@ -224,7 +228,7 @@ class Job:
         }
 
         obj["spec"]["jobTemplate"]["spec"]["ttlSecondsAfterFinished"] = JOB_TTLAFTERFINISHED
-        obj["spec"]["jobTemplate"]["spec"]["backoffLimit"] = 1
+        obj["spec"]["jobTemplate"]["spec"]["backoffLimit"] = self.retry
 
         return obj
 
@@ -272,9 +276,8 @@ class Job:
             },
             "spec": self._get_k8s_podtemplate(restartpolicy="Never"),
         }
-
         obj["spec"]["ttlSecondsAfterFinished"] = JOB_TTLAFTERFINISHED
-        obj["spec"]["backoffLimit"] = 1
+        obj["spec"]["backoffLimit"] = self.retry
 
         return obj
 
@@ -323,6 +326,7 @@ class Job:
             "status_short": self.status_short,
             "status_long": self.status_long,
             "emails": self.emails,
+            "retry": self.retry,
         }
 
         if self.schedule is not None:

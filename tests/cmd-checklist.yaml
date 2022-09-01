@@ -113,6 +113,7 @@
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
+            && echo "$response" | grep -q '"retry": 0' \
             && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
@@ -180,6 +181,63 @@
       stderr: ""
 
 #
+# retried job
+#
+
+- name: "create retried job with with retry not within acceptable values should fail"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${SLEEP_CMD}" -d "retry=10" -f
+      # the server returns 500 (because k8s returns 409) and curl returns 22
+      retcode: 22
+      stdout: ""
+      stderr: ""
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
+      retcode: 0
+      stdout: "0"
+      stderr: ""
+
+
+- name: "create retried job"
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${SLEEP_CMD}" -d "retry=4"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+
+- name: "show retried job (check the 'retry' property)"
+  tests:
+    - cmd: |
+            curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} | grep -q '"retry": 4'
+      retcode: 0
+      stdout: ""
+      stderr: ""
+
+- name: "list jobs (check the 'retry' property)"
+  tests:
+    - cmd: |
+            curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | grep '"retry": 4' | wc -l
+      retcode: 0
+      stdout: "1"
+      stderr: ""
+
+- name: "delete retried job"
+  tests:
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\""
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+- name: "show retried job should fail because we just deleted it"
+  tests:
+    - cmd: curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS} -f
+      # this means the server returned 404
+      retcode: 22
+      stdout: ""
+      stderr: ""
+
+#
 # cronjobs
 #
 
@@ -191,6 +249,31 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
+
+- name: "list jobs, only cronjob is present"
+  tests:
+    # trailing echo helps with stdout comparision
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp
+      retcode: 0
+      stdout: >-
+       [
+          {
+             "cmd" : "./sleep40.sh",
+             "emails" : "none",
+             "filelog" : "False",
+             "filelog_stderr" : "/dev/null",
+             "filelog_stdout" : "/dev/null",
+             "image" : "tf-bullseye-std",
+             "name" : "cronjob",
+             "namespace" : "tool-test",
+             "retry" : 0,
+             "schedule" : "*/10 * * * *",
+             "status_long" : "No pods were created for this job.",
+             "status_short" : "Last schedule time: unknown",
+             "user" : "test"
+          }
+       ]
+      stderr: ""
 
 - name: "create duplicated cronjob should fail"
   tests:
@@ -219,6 +302,7 @@
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
+            && echo "$response" | grep -q '"retry": 0' \
             && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
@@ -226,30 +310,6 @@
             && echo "$response" | grep -F -q '"schedule": "*/10 * * * *"'
       retcode: 0
       stdout: ""
-      stderr: ""
-
-- name: "list jobs, only cronjob is present"
-  tests:
-    # trailing echo helps with stdout comparision
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp
-      retcode: 0
-      stdout: >-
-       [
-          {
-             "cmd" : "./sleep40.sh",
-             "emails" : "none",
-             "filelog" : "False",
-             "filelog_stderr" : "/dev/null",
-             "filelog_stdout" : "/dev/null",
-             "image" : "tf-bullseye-std",
-             "name" : "cronjob",
-             "namespace" : "tool-test",
-             "schedule" : "*/10 * * * *",
-             "status_long" : "No pods were created for this job.",
-             "status_short" : "Last schedule time: unknown",
-             "user" : "test"
-          }
-       ]
       stderr: ""
 
 - name: "delete cronjob job"
@@ -331,6 +391,7 @@
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
+            && echo "$response" | grep -q '"retry": 0' \
             && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
