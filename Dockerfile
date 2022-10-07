@@ -1,4 +1,8 @@
 FROM debian:buster-slim
+
+RUN mkdir -pv /run/prometheus-multiproc
+ENV PROMETHEUS_MULTIPROC_DIR /run/prometheus-multiproc
+
 WORKDIR /app
 RUN apt-get update
 RUN apt-get install uwsgi-plugin-python3 python3-pip python3-wheel python3-setuptools -y --no-install-recommends

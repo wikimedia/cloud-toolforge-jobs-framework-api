@@ -68,6 +68,9 @@ spec:
             - containerPort: 30001
               name: https
               protocol: TCP
+            - containerPort: 9000
+              name: metrics
+              protocol: TCP
           volumeMounts:
           - mountPath: /etc/nginx/ssl
             name: jobs-api-server-cert

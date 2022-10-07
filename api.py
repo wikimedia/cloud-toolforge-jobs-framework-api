@@ -16,6 +16,7 @@
 
 from flask import Flask
 from flask_restful import Api
+from tjf.metrics import metrics_init_app
 from tjf.run import Run
 from tjf.show import Show
 from tjf.list import List
@@ -25,6 +26,8 @@ from tjf.images import Images, update_available_images
 
 app = Flask(__name__)
 api = Api(app)
+
+metrics_init_app(app)
 
 api.add_resource(Run, "/api/v1/run/")
 api.add_resource(Show, "/api/v1/show/<name>")
