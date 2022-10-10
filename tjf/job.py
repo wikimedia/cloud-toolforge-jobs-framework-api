@@ -55,6 +55,11 @@ def _filelog_string(jobname: str, filelog: bool):
     return " 1>/dev/null 2>/dev/null"
 
 
+def _remove_filelog_suffix(command: str) -> str:
+    # remove log substring, which should be the last thing in the command string
+    return command[: command.rindex(" 1>")]
+
+
 # NOTE: this means the container needs /bin/sh :-S A future person needs to validate/enforce that
 JOB_CMD_WRAPPER = ["/bin/sh", "-c", "--"]
 JOB_DEFAULT_MEMORY = "512Mi"
@@ -144,8 +149,7 @@ class Job:
 
         # the user specified command should be the last element in the cmd array
         _cmd = podspec["template"]["spec"]["containers"][0]["command"][-1]
-        # remove log substring, which should be the last thing in the command string
-        cmd = _cmd[: _cmd.find(" 1>>")]
+        cmd = _remove_filelog_suffix(_cmd)
 
         # if the job was created in the past with a different command format, we may have fail
         # to parse it. Show something to users
