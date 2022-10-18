@@ -230,14 +230,15 @@ def _launch_manual_cronjob(user: User, job: Job):
 
 
 def restart_job(user: User, job: Job):
+    selector = labels_selector(job.jobname, user.name, job.k8s_type)
+
     if job.k8s_type == "cronjobs":
+        if not user.kapi.get_objects("jobs", selector=selector):
+            raise Exception("job is currently not running")
+
         # Delete currently running jobs to avoid duplication
-        user.kapi.delete_objects(
-            "jobs", selector=labels_selector(job.jobname, user.name, job.k8s_type)
-        )
-        user.kapi.delete_objects(
-            "pods", selector=labels_selector(job.jobname, user.name, job.k8s_type)
-        )
+        user.kapi.delete_objects("jobs", selector=selector)
+        user.kapi.delete_objects("pods", selector=selector)
 
         # Wait until the currently running job stops
         _wait_for_pod_exit(user, job)
@@ -246,9 +247,7 @@ def restart_job(user: User, job: Job):
         _launch_manual_cronjob(user, job)
     elif job.k8s_type == "deployments":
         # Simply delete the pods and let Kubernetes re-create them
-        user.kapi.delete_objects(
-            "pods", selector=labels_selector(job.jobname, user.name, job.k8s_type)
-        )
+        user.kapi.delete_objects("pods", selector=selector)
     elif job.k8s_type == "jobs":
         raise Exception("single jobs can't be restarted")
     else:
