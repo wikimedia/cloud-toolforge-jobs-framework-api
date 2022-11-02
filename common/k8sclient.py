@@ -18,6 +18,7 @@ class K8sClient(object):
         "jobs": "batch/v1",
         "cronjobs": "batch/v1",
         "limitranges": "v1",
+        "resourcequotas": "v1",
     }
 
     @classmethod

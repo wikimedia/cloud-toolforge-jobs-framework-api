@@ -580,6 +580,36 @@
       retcode: 2
 
 #
+# quota errors
+#
+- name: quota error reporting
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}1" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}2" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}3" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    # quota for continuous jobs created in faketoolforge is 3, this should fail
+    - cmd: curl --fail-with-body -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}4" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
+      retcode: 22
+      stdout: >-
+        "HTTP 403: out of quota for this kind of job. Please check https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework#Job_quotas"
+      stderr: ""
+
+#
 # cleanup
 #
 - name: "flush operation all jobs"

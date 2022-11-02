@@ -36,7 +36,40 @@ parser.add_argument("cpu")
 parser.add_argument("emails")
 
 
-def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job):
+def _is_out_of_quota(e: requests.exceptions.HTTPError, job: Job, user: User) -> bool:
+    """Returns True if the user is out of quota for a given job type."""
+    if e.response.status_code != 403:
+        return False
+    if not str(e).startswith("403 Client Error: Forbidden for url"):
+        return False
+
+    resource_quota = user.kapi.get_objects("resourcequotas")[0]
+
+    if job.k8s_type == "cronjobs":
+        quota = resource_quota["status"]["hard"]["count/cronjobs.batch"]
+        used = resource_quota["status"]["used"]["count/cronjobs.batch"]
+    elif job.k8s_type == "deployments":
+        quota = resource_quota["status"]["hard"]["count/deployments.apps"]
+        used = resource_quota["status"]["used"]["count/deployments.apps"]
+    elif job.k8s_type == "jobs":
+        quota = resource_quota["status"]["hard"]["count/jobs.batch"]
+        used = resource_quota["status"]["used"]["count/jobs.batch"]
+    else:
+        return False
+
+    if used >= quota:
+        return True
+
+    return False
+
+
+def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job, user: User):
+    """Function to handle some known kubernetes API exceptions."""
+    if _is_out_of_quota(e, job, user):
+        hint_url = "https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework#Job_quotas"
+        result = f"HTTP 403: out of quota for this kind of job. Please check {hint_url}", 403
+        return result
+
     json_s = json.dumps(job.get_k8s_object()).encode("utf-8").decode("unicode-escape")
 
     # hope k8s doesn't change this behavior too often
@@ -91,7 +124,7 @@ class Run(Resource):
 
             result = create_job(user=user, job=job)
         except requests.exceptions.HTTPError as e:
-            result = _handle_k8s_exception(e, job)
+            result = _handle_k8s_exception(e, job, user)
         except Exception as e:
             result = f"ERROR: {str(e)}", 400
 

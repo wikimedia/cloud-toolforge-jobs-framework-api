@@ -348,3 +348,25 @@ rules:
   - podsecuritypolicies
   verbs:
   - use
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tool-test
+  namespace: tool-test
+spec:
+  hard:
+    configmaps: "10"
+    count/cronjobs.batch: "50"
+    count/deployments.apps: "3"
+    count/jobs.batch: "15"
+    limits.cpu: "2"
+    limits.memory: 8Gi
+    persistentvolumeclaims: "3"
+    pods: "10"
+    replicationcontrollers: "1"
+    requests.cpu: "2"
+    requests.memory: 6Gi
+    secrets: "10"
+    services: "1"
+    services.nodeports: "0"
