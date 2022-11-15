@@ -64,7 +64,7 @@ $ kind create cluster --config ~/kind.yaml --image kindest/node:v1.18.19@sha256:
   From the top level directory of this repository, run:
 
 ```
-$ deployment/deploy.sh
+$ ./deploy.sh
 ```
   Now you need to override the imagepull policy for the jobs-api deployment:
 
@@ -98,7 +98,7 @@ $ kind load docker-image jobs-api:latest
  8) At this point, hopefully, it should work:
 
 ```
-$ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/containers/ \
+$ curl https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1/images/ \
   -H "Host:jobs.svc.toolsbeta.eqiad1.wikimedia.cloud" \
   --cert /data/project/test/.toolskube/client.crt \
   --key /data/project/test/.toolskube/client.key \
