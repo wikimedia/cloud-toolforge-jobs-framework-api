@@ -17,10 +17,11 @@ sudo mkdir -p /data/project/${USER}
 sudo chmod -R a+wx /data/project/
 
 cat <<EOF > /data/project/${USER}/sleep40.sh
- echo "Waiting 40"
- sleep 40
+#!/bin/sh
+echo "Waiting 40"
+sleep 40
 EOF
-chmod a-x /data/project/${USER}/sleep40.sh
+chmod a+x /data/project/${USER}/sleep40.sh
 
 
 # to hold .kube/config
