@@ -25,11 +25,11 @@ from tjf.ops import find_job, create_job
 
 # arguments that the API understands
 parser = reqparse.RequestParser()
-parser.add_argument("cmd")
-parser.add_argument("imagename")
+parser.add_argument("cmd", required=True)
+parser.add_argument("imagename", required=True)
 parser.add_argument("schedule")
 parser.add_argument("continuous", type=bool, default=False)
-parser.add_argument("name")
+parser.add_argument("name", required=True)
 parser.add_argument("filelog", type=bool, default=False)
 parser.add_argument("memory")
 parser.add_argument("cpu")
