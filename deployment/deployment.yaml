@@ -108,6 +108,8 @@ data:
   images.yaml: |
     ---
     - shortname: tf-bullseye-std
+      image: docker-registry.tools.wmflabs.org/toolforge-bullseye-sssd:latest
+    - shortname: tf-bullseye-std-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-bullseye-standalone:latest
     - shortname: tf-buster-std-DEPRECATED
       image: docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest
