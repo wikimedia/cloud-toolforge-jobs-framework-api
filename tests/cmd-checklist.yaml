@@ -7,7 +7,8 @@
       SLEEP_CMD: ./sleep40.sh
       CRONJOBNAME: "cronjob"
       CONTJOBNAME: "continuousjob"
-      IMG: "tf-bullseye-std"
+      # this must have state: stable
+      IMG: "bullseye"
       SLEEP: "5"
       KUBECTL_ARGS: -n tool-tf-test
       LOG_JOB: logjob
@@ -109,6 +110,7 @@
             echo "$response" | grep -q '"name": "${JOBNAME}"' \
             && echo "$response" | grep -q '"cmd": "${SLEEP_CMD}"' \
             && echo "$response" | grep -q '"image": "${IMG}"' \
+            && echo "$response" | grep -q '"image_state": "stable"' \
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
@@ -158,7 +160,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "2"
+      stdout: "4"
       stderr: ""
 
 - name: delete 2 normal jobs one by one
@@ -171,7 +173,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "1"
+      stdout: "2"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${JOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -261,7 +263,8 @@
              "filelog" : "False",
              "filelog_stderr" : "/dev/null",
              "filelog_stdout" : "/dev/null",
-             "image" : "tf-bullseye-std",
+             "image" : "bullseye",
+             "image_state" : "stable",
              "name" : "cronjob",
              "retry" : 0,
              "schedule" : "*/10 * * * *",
@@ -294,6 +297,7 @@
             echo "$response" | grep -q '"name": "${CRONJOBNAME}"' \
             && echo "$response" | grep -q '"cmd": "${SLEEP_CMD}"' \
             && echo "$response" | grep -q '"image": "${IMG}"' \
+            && echo "$response" | grep -q '"image_state": "stable"' \
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
@@ -381,6 +385,7 @@
             echo "$response" | grep -q '"name": "${CONTJOBNAME}"' \
             && echo "$response" | grep -q '"cmd": "true"' \
             && echo "$response" | grep -q '"image": "${IMG}"' \
+            && echo "$response" | grep -q '"image_state": "stable"' \
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
@@ -435,7 +440,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "2"
+      stdout: "4"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -445,7 +450,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "1"
+      stdout: "2"
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}2" -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
@@ -498,7 +503,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "2"
+      stdout: "4"
       stderr: ""
     # create again the cronjob to do the reverse test
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "schedule=*/5 * * * *"
@@ -518,7 +523,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "2"
+      stdout: "4"
       stderr: ""
     # create again the normaljob to continue with tests
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${SLEEP_CMD}"
@@ -538,7 +543,7 @@
     - cmd: sleep ${SLEEP}
     - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
-      stdout: "2"
+      stdout: "4"
       stderr: ""
 
 #

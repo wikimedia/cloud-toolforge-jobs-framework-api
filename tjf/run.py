@@ -18,7 +18,7 @@ import json
 import requests
 from tjf.job import Job
 from flask_restful import Resource, reqparse
-from tjf.images import image_validate, image_get_url
+from tjf.images import image_by_name, image_get_url
 from tjf.user import User
 from tjf.ops import find_job, create_job
 from tjf.command import Command
@@ -103,7 +103,7 @@ class Run(Resource):
 
         args = parser.parse_args()
 
-        if not image_validate(args.imagename):
+        if not image_by_name(args.imagename):
             return "HTTP 400: invalid container image", 400
 
         if find_job(user=user, jobname=args.name) is not None:

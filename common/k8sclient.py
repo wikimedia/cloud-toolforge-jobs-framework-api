@@ -1,12 +1,20 @@
 # from tools-webservice toolsws/backends/kubernetes.py
 # Copyright (C) 2020 Bryan Davis <bd808@wikimedia.org>
 
-import os
 import requests
 import yaml
+from typing import Optional
 
 
-class K8sClient(object):
+def _find_cfg_obj(config, kind, name):
+    """Lookup a named object in a config."""
+    for obj in config[kind]:
+        if obj["name"] == name:
+            return obj[kind[:-1]]
+    raise KeyError("Key {} not found in {} section of config".format(name, kind))
+
+
+class K8sClient:
     """Kubernetes API client."""
 
     VERSIONS = {
@@ -19,41 +27,69 @@ class K8sClient(object):
         "cronjobs": "batch/v1",
         "limitranges": "v1",
         "resourcequotas": "v1",
+        "configmaps": "v1",
     }
 
     @classmethod
     def from_file(cls, filename=None):
         """Create a client from a kubeconfig file."""
-        if not filename:
-            filename = os.getenv("KUBECONFIG", "~/.kube/config")
-        filename = os.path.expanduser(filename)
-        with open(filename) as f:
+        with open(filename, "r") as f:
             data = yaml.safe_load(f.read())
-        return cls(data)
 
-    def __init__(self, config, timeout=10):
+        context = _find_cfg_obj(data, "contexts", data["current-context"])
+        cluster = _find_cfg_obj(data, "clusters", context["cluster"])
+        user = _find_cfg_obj(data, "users", context["user"])
+
+        return cls(
+            server=cluster["server"],
+            namespace=context["namespace"],
+            tls_cert_file=user["client-certificate"],
+            tls_key_file=user["client-key"],
+            # assume this runs in a pod
+            tls_ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+        )
+
+    @classmethod
+    def from_container_service_account(cls, *, namespace: str):
+        """Create a client from the container default service account."""
+        with open("/var/run/secrets/kubernetes.io/serviceaccount/token", "r") as f:
+            token = f.read()
+
+        return cls(
+            server="https://kubernetes.default.svc",
+            namespace=namespace,
+            token=token,
+            tls_ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+        )
+
+    def __init__(
+        self,
+        *,
+        server: str,
+        namespace: str,
+        token: Optional[str] = None,
+        tls_cert_file: Optional[str] = None,
+        tls_key_file: Optional[str] = None,
+        tls_ca_file: str,
+        timeout: int = 10,
+    ):
         """Constructor."""
-        self.config = config
         self.timeout = timeout
-        self.context = self._find_cfg_obj("contexts", config["current-context"])
-        self.cluster = self._find_cfg_obj("clusters", self.context["cluster"])
-        self.server = self.cluster["server"]
-        self.namespace = self.context["namespace"]
+        self.server = server
+        self.namespace = namespace
 
-        user = self._find_cfg_obj("users", self.context["user"])
         self.session = requests.Session()
-        self.session.cert = (user["client-certificate"], user["client-key"])
-        self.session.verify = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+
+        if token:
+            self.session.headers["Authorization"] = f"Bearer {token}"
+
+        if tls_cert_file and tls_key_file:
+            self.session.cert = (tls_cert_file, tls_key_file)
+
+        self.session.verify = tls_ca_file
         self.session.headers[
             "User-Agent"
         ] = f"jobs-framework-api python-requests/{requests.__version__}"
-
-    def _find_cfg_obj(self, kind, name):
-        """Lookup a named object in our config."""
-        for obj in self.config[kind]:
-            if obj["name"] == name:
-                return obj[kind[:-1]]
-        raise KeyError("Key {} not found in {} section of config".format(name, kind))
 
     def _make_kwargs(self, url, **kwargs):
         """Setup kwargs for a Requests request."""

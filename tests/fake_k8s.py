@@ -1,21 +1,43 @@
-fake_images = [
-    {
-        "shortname": "tf-bullseye-std",
-        "image": "docker-registry.tools.wmflabs.org/toolforge-bullseye-standalone:latest",
-    },
-    {
-        "shortname": "tf-buster-std-DEPRECATED",
-        "image": "docker-registry.tools.wmflabs.org/toolforge-buster-standalone:latest",
-    },
-    {
-        "shortname": "tf-golang",
-        "image": "docker-registry.tools.wmflabs.org/toolforge-golang-sssd-base:latest",
-    },
-    {
-        "shortname": "tf-golang111",
-        "image": "docker-registry.tools.wmflabs.org/toolforge-golang111-sssd-base:latest",
-    },
-]
+fake_images = """
+node12:
+  aliases:
+  - tf-node12
+  - tf-node12-DEPRECATED
+  state: deprecated
+  variants:
+    jobs-framework:
+      image: docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base
+    webservice:
+      image: docker-registry.tools.wmflabs.org/toolforge-node12-sssd-web
+node16:
+  aliases:
+  - tf-node16
+  state: stable
+  variants:
+    jobs-framework:
+      image: docker-registry.tools.wmflabs.org/toolforge-node16-sssd-base
+    webservice:
+      image: docker-registry.tools.wmflabs.org/toolforge-node16-sssd-web
+php7.3:
+  aliases:
+  - tf-php73
+  - tf-php73-DEPRECATED
+  state: deprecated
+  variants:
+    jobs-framework:
+      image: docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base
+    webservice:
+      image: docker-registry.tools.wmflabs.org/toolforge-php73-sssd-web
+php7.4:
+  aliases:
+  - tf-php74
+  state: stable
+  variants:
+    jobs-framework:
+      image: docker-registry.tools.wmflabs.org/toolforge-php74-sssd-base
+    webservice:
+      image: docker-registry.tools.wmflabs.org/toolforge-php74-sssd-web
+"""
 
 JOB_CONT_NO_EMAILS_NO_FILELOG_OLD_ARRAY = {
     "apiVersion": "apps/v1",

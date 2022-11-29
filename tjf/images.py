@@ -14,52 +14,78 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from dataclasses import dataclass
+from typing import List, Optional
+
 import yaml
-from tjf.user import User
 from flask_restful import Resource
 
+from common.k8sclient import K8sClient
+from tjf.user import User
+
+
+@dataclass(frozen=True)
+class Image:
+    canonical_name: str
+    aliases: List[str]
+    container: str
+    state: str
+
+
 # The ConfigMap is only read at startup. Restart the webservice to reload the available images
-CONFIGMAP_FILE = "/etc/images.yaml"
-AVAILABLE_IMAGES = []
+AVAILABLE_IMAGES: List[Image] = []
+
+
+VARIANT_KEY = "jobs-framework"
+# TODO: make configurable
+CONTAINER_TAG = "latest"
 
 
 def update_available_images():
-    with open(CONFIGMAP_FILE) as f:
-        yaml_data = yaml.safe_load(f.read())
+    client = K8sClient.from_container_service_account(namespace="tf-public")
+    configmap = client.get_object("configmaps", "image-config")
+    yaml_data = yaml.safe_load(configmap["data"]["images-v1.yaml"])
 
-    for i in yaml_data:
-        shortname = i["shortname"]
-        image = i["image"]
+    AVAILABLE_IMAGES.clear()
 
-        entry = {"shortname": shortname, "image": image}
+    for name, data in yaml_data.items():
+        if VARIANT_KEY not in data["variants"]:
+            continue
 
-        print(f"Adding available image: {entry}")
-        AVAILABLE_IMAGES.append(entry)
+        container = data["variants"][VARIANT_KEY]["image"]
+        image = Image(
+            canonical_name=name,
+            aliases=data.get("aliases", []),
+            container=f"{container}:{CONTAINER_TAG}",
+            state=data["state"],
+        )
+
+        AVAILABLE_IMAGES.append(image)
 
     if len(AVAILABLE_IMAGES) < 1:
         raise Exception("Empty list of available images")
 
 
-def image_get_url(shortname):
+def image_by_name(name: str) -> Optional[Image]:
     for image in AVAILABLE_IMAGES:
-        if image.get("shortname") == shortname:
-            return image.get("image")
+        if image.canonical_name == name or name in image.aliases:
+            return image
+    return None
 
 
-def image_validate(shortname):
-    if image_get_url(shortname) is not None:
-        return True
-    return False
+def image_by_container_url(url: str) -> Optional[Image]:
+    for image in AVAILABLE_IMAGES:
+        if image.container == url:
+            return image
+    return None
 
 
-def image_get_shortname(image: str) -> str:
-    for i in AVAILABLE_IMAGES:
-        if i.get("image") == image:
-            return i.get("shortname")
+def image_get_url(name: str) -> str:
+    image = image_by_name(name)
+    if not image:
+        raise Exception(f"No such image {image}")
 
-    # this is only called in the k8s --> user path. If the job was created in the past we may
-    # no longer have the image available for us. Print something to indicate that.
-    return "unknown"
+    return image.container
 
 
 class Images(Resource):
@@ -69,4 +95,11 @@ class Images(Resource):
         except Exception as e:
             return f"Exception: {e}", 401
 
-        return AVAILABLE_IMAGES
+        return [
+            {
+                "shortname": image.canonical_name,
+                "image": image.container,
+            }
+            for image in AVAILABLE_IMAGES
+            if image.state == "stable"
+        ]

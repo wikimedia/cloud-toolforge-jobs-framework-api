@@ -16,7 +16,7 @@
 
 import re
 import time
-from tjf.images import image_get_shortname
+from tjf.images import image_by_container_url
 import tjf.utils as utils
 from common.k8sclient import K8sClient
 from tjf.labels import generate_labels
@@ -317,7 +317,8 @@ class Job:
         obj = {
             "name": self.jobname,
             "cmd": self.command.user_command,
-            "image": image_get_shortname(self.image),
+            "image": "unknown",
+            "image_state": "unknown",
             "filelog": f"{self.command.filelog}",
             "filelog_stdout": self.command.filelog_stdout,
             "filelog_stderr": self.command.filelog_stderr,
@@ -326,6 +327,11 @@ class Job:
             "emails": self.emails,
             "retry": self.retry,
         }
+
+        image = image_by_container_url(self.image)
+        if image:
+            obj["image"] = image.canonical_name
+            obj["image_state"] = image.state
 
         if self.schedule is not None:
             obj["schedule"] = self.schedule

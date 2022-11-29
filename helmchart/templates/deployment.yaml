@@ -32,10 +32,6 @@ spec:
           readOnly: true
         - mountPath: /var/lib/sss/pipes
           name: sssd-pipes
-        - mountPath: /etc/images.yaml
-          name: images
-          readOnly: true
-          subPath: images.yaml
       - name: nginx
         image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag
           | default .Chart.AppVersion }}
@@ -79,9 +75,3 @@ spec:
       - name: jobs-api-server-cert
         secret:
           secretName: jobs-api-server-cert
-      - configMap:
-          items:
-          - key: images.yaml
-            path: images.yaml
-          name: images
-        name: images
