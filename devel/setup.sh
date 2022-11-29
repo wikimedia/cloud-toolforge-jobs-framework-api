@@ -16,6 +16,15 @@ sudo mkdir -p /var/lib/sss/pipes/
 sudo mkdir -p /data/project/${USER}
 sudo chmod -R a+wx /data/project/
 
+sudo mkdir -p /mnt/nfs/dumps-clouddumps1001.wikimedia.org
+sudo mkdir -p /mnt/nfs/dumps-clouddumps1002.wikimedia.org
+sudo mkdir -p /data/scratch
+sudo mkdir -p /public/dumps
+
+sudo touch /etc/ldap.conf
+sudo touch /etc/ldap.yaml
+sudo touch /etc/novaobserver.yaml
+
 cat <<EOF > /data/project/${USER}/sleep40.sh
 #!/bin/sh
 echo "Waiting 40"

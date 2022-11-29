@@ -45,19 +45,42 @@ nodes:
     containerPath: /etc/wmcs-project
   - hostPath: /var/lib/sss/pipes/
     containerPath: /var/lib/sss/pipes/
+  - hostPath: /data/scratch
+    containerPath: /data/scratch
+  - hostPath: /public/dumps
+    containerPath: /public/dumps
+  - hostPath: /etc/ldap.conf
+    containerPath: /etc/ldap.conf
+  - hostPath: /etc/ldap.yaml
+    containerPath: /etc/ldap.yaml
+  - hostPath: /etc/novaobserver.yaml
+    containerPath: /etc/novaobserver.yaml
+  - hostPath: /mnt/nfs/dumps-clouddumps1001.wikimedia.org
+    containerPath: /mnt/nfs/dumps-clouddumps1001.wikimedia.org
+  - hostPath: /mnt/nfs/dumps-clouddumps1002.wikimedia.org
+    containerPath: /mnt/nfs/dumps-clouddumps1002.wikimedia.org
 ```
 
  3) Bootstrap kind cluster
 
 ```
 $ kind create cluster --config ~/kind.yaml --image kindest/node:v1.18.19@sha256:xxxxxxxx
+$ kubectl label nodes kind-control-plane kubernetes.wmcloud.org/nfs-mounted=true
 ```
 
-  Make sure kubectl works as expected, next steps require it.
+  Make sure kubectl works as expected.
 
   The --image switch lets you select a particular k8s version. The SHA can be obtained from:
   https://github.com/kubernetes-sigs/kind/releases
   Make sure you deploy the same k8s version that tools/toolsbeta use.
+
+  Also, you need to deploy the Toolforge volume-admission-controller:
+
+```
+$ git clone "https://gerrit.wikimedia.org/r/cloud/toolforge/volume-admission-controller"
+$ cd volume-admission-controller
+```
+then follow the README.md to install.
 
  4) Deploy jobs-api
 
