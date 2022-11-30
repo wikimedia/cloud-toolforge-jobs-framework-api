@@ -210,7 +210,7 @@ spec:
               path: images.yaml
       containers:
         - name: webservice
-          image: docker-registry.tools.wmflabs.org/toolforge-jobs-framework-api:2b800f5
+          image: docker-registry.tools.wmflabs.org/toolforge-jobs-framework-api:c360d54
           imagePullPolicy: Always
           volumeMounts:
           - mountPath: /data/project
