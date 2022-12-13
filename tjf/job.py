@@ -20,6 +20,7 @@ from tjf.images import image_get_shortname
 import tjf.utils as utils
 from common.k8sclient import K8sClient
 from tjf.labels import generate_labels
+from tjf.command import Command
 
 # This is a restriction by Kubernetes:
 # a lowercase RFC 1123 subdomain must consist of lower case alphanumeric
@@ -48,21 +49,6 @@ def validate_emails(emails: str):
         raise Exception(f"emails value not supported. We only understand: {values}")
 
 
-def _filelog_string(jobname: str, filelog: bool):
-    # Note that from_k8s_object() depends on the location of 1>>
-    if filelog:
-        return f" 1>>{jobname}.out 2>>{jobname}.err"
-
-    return " 1>/dev/null 2>/dev/null"
-
-
-def _remove_filelog_suffix(command: str) -> str:
-    # remove log substring, which should be the last thing in the command string
-    return command[: command.rindex(" 1>")]
-
-
-# NOTE: this means the container needs /bin/sh :-S A future person needs to validate/enforce that
-JOB_CMD_WRAPPER = ["/bin/sh", "-c", "--"]
 JOB_DEFAULT_MEMORY = "512Mi"
 JOB_DEFAULT_CPU = "500m"
 # tell kubernetes to delete jobs this many seconds after they finish
@@ -72,7 +58,7 @@ JOB_TTLAFTERFINISHED = 30
 class Job:
     def __init__(
         self,
-        cmd,
+        command: Command,
         image,
         jobname,
         ns,
@@ -80,12 +66,11 @@ class Job:
         schedule,
         cont,
         k8s_object,
-        filelog: bool,
         memory: str,
         cpu: str,
         emails: str,
     ):
-        self.cmd = cmd
+        self.command = command
         self.image = image
         self.jobname = jobname
         self.ns = ns
@@ -95,7 +80,6 @@ class Job:
         self.schedule = schedule
         self.cont = cont
         self.k8s_object = k8s_object
-        self.filelog = filelog
         self.memory = memory
         self.cpu = cpu
         self.emails = emails
@@ -139,31 +123,18 @@ class Job:
         namespace = metadata["namespace"]
         user = "".join(namespace.split("-", 1)[1:])
         image = podspec["template"]["spec"]["containers"][0]["image"]
-
-        _filelog = metadata["labels"].get("jobs.toolforge.org/filelog", "no")
-        if _filelog == "yes":
-            filelog = True
-        else:
-            filelog = False
-
         emails = metadata["labels"].get("jobs.toolforge.org/emails", "none")
-
-        # the user specified command should be the last element in the cmd array
-        _cmd = podspec["template"]["spec"]["containers"][0]["command"][-1]
-        cmd = _remove_filelog_suffix(_cmd)
-
-        # if the job was created in the past with a different command format, we may have fail
-        # to parse it. Show something to users
-        if cmd is None or cmd == "":
-            cmd = "unknown"
 
         resources = podspec["template"]["spec"]["containers"][0].get("resources", {})
         resources_limits = resources.get("limits", {})
         memory = resources_limits.get("memory", JOB_DEFAULT_MEMORY)
         cpu = resources_limits.get("cpu", JOB_DEFAULT_CPU)
 
+        k8s_command = podspec["template"]["spec"]["containers"][0]["command"]
+        command = Command.from_k8s(k8s_metadata=metadata, k8s_command=k8s_command)
+
         return cls(
-            cmd=cmd,
+            command=command,
             image=image,
             jobname=jobname,
             ns=namespace,
@@ -171,19 +142,10 @@ class Job:
             schedule=schedule,
             cont=cont,
             k8s_object=object,
-            filelog=filelog,
             memory=memory,
             cpu=cpu,
             emails=emails,
         )
-
-    def _generate_job_command(self):
-        k8s_cmd_array = JOB_CMD_WRAPPER.copy()
-        # separation space is returned by  _filelog_string()
-        # note that from_k8s_oject() depends on filelog string being at the end of the command
-        k8s_cmd_array.append(f"{self.cmd}{_filelog_string(self.jobname, self.filelog)}")
-
-        return k8s_cmd_array
 
     def _generate_container_resources(self):
         # this function was adapted from toollabs-webservice toolsws/backends/kubernetes.py
@@ -215,7 +177,7 @@ class Job:
             jobname=self.jobname,
             username=self.username,
             type=self.k8s_type,
-            filelog=self.filelog,
+            filelog=self.command.filelog,
             emails=self.emails,
         )
         return {
@@ -228,7 +190,7 @@ class Job:
                             "name": self.jobname,
                             "image": self.image,
                             "workingDir": "/data/project/{}".format(self.username),
-                            "command": self._generate_job_command(),
+                            "command": self.command.generate_for_k8s(),
                             "resources": self._generate_container_resources(),
                         }
                     ],
@@ -241,7 +203,7 @@ class Job:
             jobname=self.jobname,
             username=self.username,
             type=self.k8s_type,
-            filelog=self.filelog,
+            filelog=self.command.filelog,
             emails=self.emails,
         )
         obj = {
@@ -272,7 +234,7 @@ class Job:
             jobname=self.jobname,
             username=self.username,
             type=self.k8s_type,
-            filelog=self.filelog,
+            filelog=self.command.filelog,
             emails=self.emails,
         )
         obj = {
@@ -298,7 +260,7 @@ class Job:
             jobname=self.jobname,
             username=self.username,
             type=self.k8s_type,
-            filelog=self.filelog,
+            filelog=self.command.filelog,
             emails=self.emails,
         )
         obj = {
@@ -352,11 +314,11 @@ class Job:
     def get_api_object(self):
         obj = {
             "name": self.jobname,
-            "cmd": self.cmd,
+            "cmd": self.command.user_command,
             "image": image_get_shortname(self.image),
             "user": self.username,
             "namespace": self.ns,
-            "filelog": f"{self.filelog}",
+            "filelog": f"{self.command.filelog}",
             "status_short": self.status_short,
             "status_long": self.status_long,
             "emails": self.emails,

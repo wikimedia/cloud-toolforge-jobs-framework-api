@@ -21,7 +21,7 @@ from flask_restful import Resource, reqparse
 from tjf.images import image_validate, image_get_url
 from tjf.user import User
 from tjf.ops import find_job, create_job
-
+from tjf.command import Command
 
 # arguments that the API understands
 parser = reqparse.RequestParser()
@@ -108,7 +108,7 @@ class Run(Resource):
 
         try:
             job = Job(
-                cmd=args.cmd,
+                command=Command.from_api(args.cmd, args.filelog, args.name),
                 image=image_get_url(args.imagename),
                 jobname=args.name,
                 ns=user.namespace,
@@ -116,7 +116,6 @@ class Run(Resource):
                 schedule=args.schedule,
                 cont=args.continuous,
                 k8s_object=None,
-                filelog=args.filelog,
                 memory=args.memory,
                 cpu=args.cpu,
                 emails=args.emails,
