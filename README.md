@@ -9,7 +9,7 @@ This was created for [Wikimedia Toolforge](https://tolforge.org).
 
 ## Installation
 
-See `deployment/README.md`.
+Run `./deploy.sh`.
 
 ## Development
 

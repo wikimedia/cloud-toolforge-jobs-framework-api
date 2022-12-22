@@ -1,0 +1,17 @@
+# base values file
+replicas: 2
+
+webservice:
+  image:
+    repository: docker-registry.tools.wmflabs.org/toolforge-jobs-framework-api
+    tag: c360d54
+    pullpolicy: Always
+nginx:
+  image:
+    repository: docker-registry.tools.wmflabs.org/nginx
+    tag: latest
+    pullpolicy: Always
+
+nodeport:
+  name: https
+  port: 30001

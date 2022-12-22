@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jobs-api
+  labels:
+    name: jobs-api
+    {{- include "jobs-api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      name: jobs-api
+      {{- include "jobs-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        name: jobs-api
+        {{- include "jobs-api.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: webservice
+        image: {{ .Values.webservice.image.repository }}:{{ .Values.webservice.image.tag
+          | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.webservice.image.pullpolicy }}
+        resources: {}
+        volumeMounts:
+        - mountPath: /data/project
+          name: home
+        - mountPath: /etc/wmcs-project
+          name: wmcs-project
+          readOnly: true
+        - mountPath: /var/lib/sss/pipes
+          name: sssd-pipes
+        - mountPath: /etc/images.yaml
+          name: images
+          readOnly: true
+          subPath: images.yaml
+      - name: nginx
+        image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag
+          | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{ .Values.nodeport.port }}
+          name: {{ .Values.nodeport.name }}
+          protocol: TCP
+        - containerPort: 9000
+          name: metrics
+          protocol: TCP
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: jobs-api-server-cert
+          readOnly: true
+        - mountPath: /etc/nginx/nginx.conf
+          name: nginx-config
+          readOnly: true
+          subPath: nginx.conf
+      serviceAccountName: jobs-api
+      volumes:
+      - hostPath:
+          path: /data/project
+          type: Directory
+        name: home
+      - hostPath:
+          path: /etc/wmcs-project
+          type: File
+        name: wmcs-project
+      - hostPath:
+          path: /var/lib/sss/pipes
+          type: Directory
+        name: sssd-pipes
+      - configMap:
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+          name: nginx-config
+        name: nginx-config
+      - name: jobs-api-server-cert
+        secret:
+          secretName: jobs-api-server-cert
+      - configMap:
+          items:
+          - key: images.yaml
+            path: images.yaml
+          name: images
+        name: images

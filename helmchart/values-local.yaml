@@ -1,0 +1,7 @@
+# local/devel values file
+replicas: 1
+webservice:
+  image:
+    repository: jobs-api
+    tag: latest
+    pullpolicy: Never

@@ -87,12 +87,7 @@ then follow the README.md to install.
   From the top level directory of this repository, run:
 
 ```
-$ ./deploy.sh
-```
-  Now you need to override the imagepull policy for the jobs-api deployment:
-
-```
-$ kubectl apply -f devel/kind-deployment-overrides.yaml
+$ ./deploy.sh local
 ```
 
  5) Setup fake user `test`, and the rest of the environment.

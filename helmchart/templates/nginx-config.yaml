@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  labels:
+    {{- include "jobs-api.labels" . | nindent 4 }}
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        server {
+            listen 30001 ssl;
+
+            ssl_certificate        /etc/nginx/ssl/tls.crt;
+            ssl_certificate_key    /etc/nginx/ssl/tls.key;
+            ssl_client_certificate /var/run/secrets/kubernetes.io/serviceaccount/ca.crt;
+            ssl_verify_client      on;
+            ssl_protocols          TLSv1.1 TLSv1.2;
+            ssl_ciphers            HIGH:!aNULL:!MD5;
+
+            location / {
+                include uwsgi_params;
+                uwsgi_pass localhost:8000;
+                uwsgi_param HTTP_SSL_CLIENT_SUBJECT_DN $ssl_client_s_dn;
+            }
+        }
+
+        server {
+            listen 9000;
+
+            location = /metrics {
+                include uwsgi_params;
+                uwsgi_pass localhost:8000;
+            }
+        }
+    }
