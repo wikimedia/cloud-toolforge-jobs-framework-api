@@ -21,6 +21,8 @@ def generate_labels(jobname: str, username: str, type: str, filelog: bool, email
         "app.kubernetes.io/version": "1",
         "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
         "app.kubernetes.io/created-by": username,
+        # temporal label, until no jobs without it exist
+        "jobs.toolforge.org/command-new-format": "yes",
     }
 
     if type is not None:
