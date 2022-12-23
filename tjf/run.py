@@ -106,11 +106,9 @@ class Run(Resource):
         if find_job(user=user, jobname=args.name) is not None:
             return "HTTP 409: a job with the same name exists already", 409
 
-        command = Command.from_api(args.cmd, args.filelog, args.name)
-
         try:
             job = Job(
-                command=command,
+                command=Command.from_api(args.cmd, args.filelog, args.name),
                 image=image_get_url(args.imagename),
                 jobname=args.name,
                 ns=user.namespace,
