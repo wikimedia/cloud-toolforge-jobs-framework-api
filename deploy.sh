@@ -5,7 +5,7 @@ set -eu
 BASE_DIR=$(dirname $(realpath -s $0))
 HELMCHART=${BASE_DIR}/helmchart
 deploy_environment=${1:-}
-project=$(cat /etc/wmcs-project)
+project=$(cat /etc/wmcs-project 2>/dev/null || echo "local")
 fqdn="jobs.svc.${project}.eqiad1.wikimedia.cloud"
 
 if [ -z "${deploy_environment}" ] ; then
