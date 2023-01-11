@@ -40,7 +40,7 @@ mkdir -p /data/project/${USER}/.kube/
 mkdir -p /data/project/${USER}/.toolskube/
 
 # generate user certificates and put them in the right place
-GET_CERT_SCRIPT="./devel/k8s-get-cert.sh"
+GET_CERT_SCRIPT="./utils/k8s-get-cert.sh"
 OUTPUT=$(${GET_CERT_SCRIPT} "test")
 CERT_FILE="$(head -1 <<< $OUTPUT)"
 KEY_FILE="$(tail -1 <<< $OUTPUT)"
