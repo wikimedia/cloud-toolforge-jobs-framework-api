@@ -2,18 +2,18 @@
 - envvars:
     - CURL_URL: "https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1"
       CURL_HDR: "Host:jobs.svc.toolsbeta.eqiad1.wikimedia.cloud"
-      CURL_ARGS: "--cert /data/project/test/.toolskube/client.crt --key /data/project/test/.toolskube/client.key --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1 -k"
+      CURL_ARGS: "--cert /data/project/tf-test/.toolskube/client.crt --key /data/project/tf-test/.toolskube/client.key --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1 -k"
       JOBNAME: "normaljob"
       SLEEP_CMD: ./sleep40.sh
       CRONJOBNAME: "cronjob"
       CONTJOBNAME: "continuousjob"
       IMG: "tf-bullseye-std"
       SLEEP: "5"
-      KUBECTL_ARGS: -n tool-test
+      KUBECTL_ARGS: -n tool-tf-test
       LOG_JOB: logjob
       CUSTOM_LOG_FILE: custom-log-file
       LOG_JOB_CMD: log.sh
-      TOOLHOME: /data/project/test
+      TOOLHOME: /data/project/tf-test
 ---
 - name: "list images"
   tests:
@@ -682,4 +682,4 @@
     - cmd: kubectl ${KUBECTL_ARGS} get all
       retcode: 0
       stdout: ""
-      stderr: "No resources found in tool-test namespace."
+      stderr: "No resources found in tool-tf-test namespace."
