@@ -15,14 +15,19 @@
 #
 
 
-def generate_labels(jobname: str, username: str, type: str, filelog: bool, emails: str):
+def generate_labels(
+    jobname: str,
+    username: str,
+    type: str,
+    filelog: bool,
+    emails: str,
+    command_new_format: bool = True,
+):
     obj = {
         "toolforge": "tool",
         "app.kubernetes.io/version": "1",
         "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
         "app.kubernetes.io/created-by": username,
-        # temporal label, until no jobs without it exist
-        "jobs.toolforge.org/command-new-format": "yes",
     }
 
     if type is not None:
@@ -37,6 +42,10 @@ def generate_labels(jobname: str, username: str, type: str, filelog: bool, email
     if emails is not None:
         obj["jobs.toolforge.org/emails"] = emails
 
+    if command_new_format:
+        # temporal label, until no jobs without it exist
+        obj["jobs.toolforge.org/command-new-format"] = "yes"
+
     return obj
 
 
@@ -50,6 +59,7 @@ def labels_selector(jobname: str, username: str, type: str):
                 type=type,
                 filelog=False,
                 emails=None,
+                command_new_format=False,
             ).items()
         ]
     )
