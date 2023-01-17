@@ -318,8 +318,6 @@ class Job:
             "name": self.jobname,
             "cmd": self.command.user_command,
             "image": image_get_shortname(self.image),
-            "user": self.username,
-            "namespace": self.ns,
             "filelog": f"{self.command.filelog}",
             "filelog_stdout": self.command.filelog_stdout,
             "filelog_stderr": self.command.filelog_stderr,

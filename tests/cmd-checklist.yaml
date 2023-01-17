@@ -109,12 +109,10 @@
             echo "$response" | grep -q '"name": "${JOBNAME}"' \
             && echo "$response" | grep -q '"cmd": "${SLEEP_CMD}"' \
             && echo "$response" | grep -q '"image": "${IMG}"' \
-            && echo "$response" | grep -q '"user": "test"' \
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
             && echo "$response" | grep -q '"retry": 0' \
-            && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
             && echo "$response" | grep -q '"emails": "none"'
@@ -158,7 +156,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "2"
       stderr: ""
@@ -171,7 +169,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "1"
       stderr: ""
@@ -191,7 +189,7 @@
       retcode: 22
       stdout: ""
       stderr: ""
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "0"
       stderr: ""
@@ -265,12 +263,10 @@
              "filelog_stdout" : "/dev/null",
              "image" : "tf-bullseye-std",
              "name" : "cronjob",
-             "namespace" : "tool-test",
              "retry" : 0,
              "schedule" : "*/10 * * * *",
              "status_long" : "No pods were created for this job.",
-             "status_short" : "Last schedule time: unknown",
-             "user" : "test"
+             "status_short" : "Last schedule time: unknown"
           }
        ]
       stderr: ""
@@ -298,12 +294,10 @@
             echo "$response" | grep -q '"name": "${CRONJOBNAME}"' \
             && echo "$response" | grep -q '"cmd": "${SLEEP_CMD}"' \
             && echo "$response" | grep -q '"image": "${IMG}"' \
-            && echo "$response" | grep -q '"user": "test"' \
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
             && echo "$response" | grep -q '"retry": 0' \
-            && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
             && echo "$response" | grep -q '"emails": "none"' \
@@ -387,12 +381,10 @@
             echo "$response" | grep -q '"name": "${CONTJOBNAME}"' \
             && echo "$response" | grep -q '"cmd": "true"' \
             && echo "$response" | grep -q '"image": "${IMG}"' \
-            && echo "$response" | grep -q '"user": "test"' \
             && echo "$response" | grep -q '"filelog": "False"' \
             && echo "$response" | grep -q '"filelog_stdout": "/dev/null"' \
             && echo "$response" | grep -q '"filelog_stderr": "/dev/null"' \
             && echo "$response" | grep -q '"retry": 0' \
-            && echo "$response" | grep -q '"namespace": "tool-test"' \
             && echo "$response" | grep -q "status_short" \
             && echo "$response" | grep -q "status_long" \
             && echo "$response" | grep -q '"emails": "none"' \
@@ -441,7 +433,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "2"
       stderr: ""
@@ -451,7 +443,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "namespace" | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "1"
       stderr: ""
@@ -504,7 +496,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "2"
       stderr: ""
@@ -524,7 +516,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "2"
       stderr: ""
@@ -544,7 +536,7 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep namespace | wc -l
+    - cmd: curl -s ${CURL_URL}/list/ -H "${CURL_HDR}" ${CURL_ARGS} | json_pp | grep "image" | wc -l
       retcode: 0
       stdout: "2"
       stderr: ""
