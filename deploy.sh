@@ -18,7 +18,9 @@ if [ "${wmcs_k8s_get_cert}" == "unknown" ] ; then
     wmcs_k8s_get_cert="${BASE_DIR}/utils/k8s-get-cert.sh"
 fi
 
-# namespace needs to exist for the certificate, but the yaml file requires the namespace
+# namespace needs to exist for the certificate, but helm would require the certificate.
+# to avoid such chicken-egg problem, just create the namespace now.
+# this is a NOOP if already present anyway, and helm below wont complain either
 kubectl create namespace jobs-api --dry-run=client -o yaml | kubectl apply -f -
 
 # TLS certificate for https requests
