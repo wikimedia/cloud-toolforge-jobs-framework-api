@@ -18,7 +18,7 @@ of doing that. The author of this README recommends the lima-kilo project.
 
  0) Get the lima-kilo setup on your laptop:
 
-  Follow docs at https://gitlab.wikimedia.org/cloud/toolforge/lima-kilo
+  Follow docs at https://gitlab.wikimedia.org/repos/cloud/toolforge/lima-kilo
 
  1) Build the jobs-framework-api docker image
 
