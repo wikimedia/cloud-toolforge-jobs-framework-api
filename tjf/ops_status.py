@@ -23,6 +23,28 @@ def _refresh_status_dp(user: User, job: Job):
             elif condition["status"] == "False":
                 job.status_short = "Not running"
 
+    # Attempt to gather more details if possible
+    if job.status_short == "Not running":
+        pod_selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
+        pods = user.kapi.get_objects("pods", selector=pod_selector)
+
+        for pod in pods:
+            if "containerStatuses" not in pod["status"]:
+                continue
+
+            for container_status in pod["status"]["containerStatuses"]:
+                if "state" not in container_status:
+                    continue
+
+                if (
+                    "waiting" in container_status["state"]
+                    and container_status["state"]["waiting"]["reason"] == "CrashLoopBackOff"
+                ) or (
+                    "terminated" in container_status["state"]
+                    and container_status["state"]["terminated"]["reason"] == "Error"
+                ):
+                    job.status_short = "Fails to start"
+
 
 def _refresh_status_job(user: User, job: Job):
     status_dict = utils.dict_get_object(job.k8s_object, "status")

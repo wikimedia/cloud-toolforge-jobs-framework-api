@@ -633,6 +633,34 @@
       retcode: 2
 
 #
+# CrashLoopBackOff detection
+#
+- name: job should be detected as crashing
+  tests:
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=exit 1" -d "continuous=true"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+    - cmd: sleep ${SLEEP}
+
+    - cmd: |
+            response=$(curl -s ${CURL_URL}/show/${CONTJOBNAME} -H "${CURL_HDR}" ${CURL_ARGS})
+            echo "$response" | grep -q '"status_short": "Fails to start"'
+      retcode: 0
+      stdout: ""
+      stderr: ""
+
+    - cmd: curl -s -X DELETE ${CURL_URL}/delete/"${CONTJOBNAME}" -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\""
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+#
 # quota errors
 #
 - name: quota error reporting
