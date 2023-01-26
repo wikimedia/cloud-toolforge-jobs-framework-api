@@ -22,6 +22,13 @@ def _refresh_status_dp(user: User, job: Job):
                 job.status_short = "Running"
             elif condition["status"] == "False":
                 job.status_short = "Not running"
+        elif (
+            condition["type"] == "ReplicaFailure"
+            and condition["reason"] == "FailedCreate"
+            and condition["status"] == "True"
+            and "forbidden: exceeded quota" in condition["message"]
+        ):
+            job.status_short = "Unable to start, out of quota"
 
     # Attempt to gather more details if possible
     if job.status_short == "Not running":
