@@ -689,23 +689,29 @@
       stdout: >-
         "HTTP 403: out of quota for this kind of job. Please check https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework#Job_quotas"
       stderr: ""
+    - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
+      retcode: 0
+      stdout: "\"\""
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
 
 - name: quota job start failures
   tests:
     # 3x4Gi is more than the 8Gi maximum by default
-    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}1" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}-q1" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
       retcode: 0
       stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}2" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}-q2" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
       retcode: 0
       stdout: "201"
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
-    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}3" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}-q3" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
       retcode: 0
       stdout: "201"
       stderr: ""
@@ -713,7 +719,7 @@
     - cmd: sleep ${SLEEP}
 
     - cmd: |
-            response=$(curl -s ${CURL_URL}/show/${CONTJOBNAME}3 -H "${CURL_HDR}" ${CURL_ARGS})
+            response=$(curl -s ${CURL_URL}/show/${CONTJOBNAME}-q3 -H "${CURL_HDR}" ${CURL_ARGS})
             echo "$response" | grep -q '"status_short": "Unable to start, out of quota"'
       retcode: 0
       stdout: ""
