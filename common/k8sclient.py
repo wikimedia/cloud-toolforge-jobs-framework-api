@@ -6,6 +6,9 @@ import yaml
 from typing import Optional
 
 
+KUBERNETES_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+
 def _find_cfg_obj(config, kind, name):
     """Lookup a named object in a config."""
     for obj in config[kind]:

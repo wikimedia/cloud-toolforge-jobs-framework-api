@@ -1,16 +1,54 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2023 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
 
+from datetime import datetime
+from typing import Optional
+from common.k8sclient import KUBERNETES_DATE_FORMAT
 from tjf.labels import labels_selector
 from tjf.job import Job
 from tjf.user import User
 import tjf.utils as utils
 
 
+def _get_job_object_status(job: dict, for_complete=False) -> Optional[str]:
+    status_dict = utils.dict_get_object(job, "status")
+    conditions_dict = status_dict.get("conditions", [])
+    for condition in conditions_dict:
+        if condition["type"] == "Complete" and for_complete:
+            if condition["status"] == "True":
+                return "Completed"
+            elif condition["status"] == "False":
+                return "Not running"
+
+    if status_dict.get("failed", None) is not None:
+        return "Failed"
+
+    if (
+        status_dict.get("active", None) is not None
+        and status_dict.get("startTime", None) is not None
+    ):
+        start_time = datetime.strptime(status_dict["startTime"], KUBERNETES_DATE_FORMAT)
+        running_for = int((datetime.now() - start_time).total_seconds())
+        return f"Running for {utils.format_duration(running_for)}"
+
+
 def _refresh_status_cronjob(user: User, job: Job):
     status_dict = utils.dict_get_object(job.k8s_object, "status")
-    last = status_dict.get("lastScheduleTime", "unknown")
-    job.status_short = f"Last schedule time: {last}"
+
+    last = status_dict.get("lastScheduleTime", None)
+    if last:
+        job.status_short = f"Last schedule time: {last}"
+    else:
+        job.status_short = "Waiting for scheduled time"
+
+    for active_job in status_dict.get("active", []):
+        job_data = user.kapi.get_object("jobs", active_job["name"])
+        if not job_data:
+            continue
+
+        job_status = _get_job_object_status(job_data)
+        if job_status:
+            job.status_short = job_status
 
 
 def _refresh_status_dp(user: User, job: Job):
@@ -54,24 +92,11 @@ def _refresh_status_dp(user: User, job: Job):
 
 
 def _refresh_status_job(user: User, job: Job):
-    status_dict = utils.dict_get_object(job.k8s_object, "status")
-    conditions_dict = status_dict.get("conditions", [])
-    for condition in conditions_dict:
-        if condition["type"] == "Complete":
-            if condition["status"] == "True":
-                job.status_short = "Completed"
-                return
-            elif condition["status"] == "False":
-                job.status_short = "Not running"
-                return
-
-    if status_dict.get("failed", None) is not None:
-        job.status_short = "Failed"
-        return
-
-    if status_dict.get("active", None) is not None:
-        job.status_short = "Running"
-        return
+    job_status = _get_job_object_status(job.k8s_object, for_complete=True)
+    if job_status:
+        job.status_short = job_status
+    else:
+        job.status_short = "Unknown"
 
 
 def refresh_job_short_status(user: User, job: Job):

@@ -269,7 +269,7 @@
              "retry" : 0,
              "schedule" : "*/10 * * * *",
              "status_long" : "No pods were created for this job.",
-             "status_short" : "Last schedule time: unknown"
+             "status_short" : "Waiting for scheduled time"
           }
        ]
       stderr: ""

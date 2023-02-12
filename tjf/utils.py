@@ -149,3 +149,20 @@ def parse_quantity(quantity):
 
     exponent = Decimal(exponents[suffix[0]])
     return number * (base**exponent)
+
+
+def format_duration(seconds: int) -> int:
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    d, h = divmod(h, 24)
+
+    value = ""
+    if d > 0:
+        value += f"{d}d"
+    if h > 0:
+        value += f"{h}h"
+    if m > 0:
+        value += f"{m}m"
+    if (s > 0 and d == 0) or value == "":
+        value += f"{s}s"
+    return value
