@@ -16,6 +16,7 @@
 
 import re
 from decimal import Decimal, InvalidOperation  # for parse_quantity below
+from typing import Set
 
 
 def dict_get_object(dict, kind):
@@ -166,3 +167,10 @@ def format_duration(seconds: int) -> int:
     if (s > 0 and d == 0) or value == "":
         value += f"{s}s"
     return value
+
+
+def remove_prefixes(text: str, prefixes: Set[str]) -> str:
+    for prefix in prefixes:
+        if text.startswith(prefix):
+            text = text[len(prefix) :]
+    return text

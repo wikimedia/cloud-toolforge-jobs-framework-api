@@ -10,7 +10,20 @@ from tjf.user import User
 import tjf.utils as utils
 
 
-def _get_job_object_status(job: dict, for_complete=False) -> Optional[str]:
+def _get_quota_error(message: str) -> str:
+    keyword = "limited: "
+    if keyword in message:
+        quota_types = [
+            utils.remove_prefixes(entry.split("=")[0], ("requests.", "limits."))
+            for entry in message[message.rindex(keyword) + len(keyword) :].split(",")
+        ]
+    else:
+        quota_types = []
+
+    return f"out of quota for {', '.join(sorted(quota_types))}"
+
+
+def _get_job_object_status(user: User, job: dict, for_complete=False) -> Optional[str]:
     status_dict = utils.dict_get_object(job, "status")
     conditions_dict = status_dict.get("conditions", [])
     for condition in conditions_dict:
@@ -31,6 +44,20 @@ def _get_job_object_status(job: dict, for_complete=False) -> Optional[str]:
         running_for = int((datetime.now() - start_time).total_seconds())
         return f"Running for {utils.format_duration(running_for)}"
 
+    job_uid = job["metadata"]["uid"]
+    events = user.kapi.get_objects("events", field_selector=f"involvedObject.uid={job_uid}")
+    for event in sorted(events, key=lambda event: event["lastTimestamp"], reverse=True):
+        reason = event.get("reason", None)
+
+        if reason == "FailedCreate":
+            message = "Unable to start"
+
+            event_message = event.get("message", None)
+            if event_message and "is forbidden: exceeded quota" in event_message:
+                message += f", {_get_quota_error(event_message)}"
+
+            return message
+
 
 def _refresh_status_cronjob(user: User, job: Job):
     status_dict = utils.dict_get_object(job.k8s_object, "status")
@@ -46,7 +73,7 @@ def _refresh_status_cronjob(user: User, job: Job):
         if not job_data:
             continue
 
-        job_status = _get_job_object_status(job_data)
+        job_status = _get_job_object_status(user, job_data)
         if job_status:
             job.status_short = job_status
 
@@ -66,7 +93,8 @@ def _refresh_status_dp(user: User, job: Job):
             and condition["status"] == "True"
             and "forbidden: exceeded quota" in condition["message"]
         ):
-            job.status_short = "Unable to start, out of quota"
+            quota_error = _get_quota_error(condition["message"])
+            job.status_short = f"Unable to start, {quota_error}"
 
     # Attempt to gather more details if possible
     if job.status_short == "Not running":
@@ -92,7 +120,7 @@ def _refresh_status_dp(user: User, job: Job):
 
 
 def _refresh_status_job(user: User, job: Job):
-    job_status = _get_job_object_status(job.k8s_object, for_complete=True)
+    job_status = _get_job_object_status(user, job.k8s_object, for_complete=True)
     if job_status:
         job.status_short = job_status
     else:

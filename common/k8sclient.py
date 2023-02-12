@@ -31,6 +31,7 @@ class K8sClient:
         "limitranges": "v1",
         "resourcequotas": "v1",
         "configmaps": "v1",
+        "events": "v1",
     }
 
     @classmethod
@@ -137,11 +138,17 @@ class K8sClient:
             version=K8sClient.VERSIONS[kind],
         )
 
-    def get_objects(self, kind, selector=None):
+    def get_objects(self, kind, selector=None, *, field_selector=None):
         """Get list of objects of the given kind in the namespace."""
+        params = {}
+        if selector:
+            params["labelSelector"] = selector
+        if field_selector:
+            params["fieldSelector"] = field_selector
+
         return self._get(
             kind,
-            params={"labelSelector": selector},
+            params=params,
             version=K8sClient.VERSIONS[kind],
         )["items"]
 

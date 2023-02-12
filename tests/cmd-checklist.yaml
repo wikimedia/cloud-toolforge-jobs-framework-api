@@ -711,6 +711,9 @@
       stderr: ""
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
+
+    #
+    # Continuous job
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}-q3" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "continuous=true" -d "memory=4Gi"
       retcode: 0
       stdout: "201"
@@ -720,7 +723,24 @@
 
     - cmd: |
             response=$(curl -s ${CURL_URL}/show/${CONTJOBNAME}-q3 -H "${CURL_HDR}" ${CURL_ARGS})
-            echo "$response" | grep -q '"status_short": "Unable to start, out of quota"'
+            echo "$response" | grep -q '"status_short": "Unable to start, out of quota for memory"'
+      retcode: 0
+      stdout: ""
+      stderr: ""
+
+    #
+    # Normal job
+    - cmd: sleep ${SLEEP}
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=sleep 3600" -d "memory=4Gi"
+      retcode: 0
+      stdout: "201"
+      stderr: ""
+    # give k8s a chance to do its thing
+    - cmd: sleep ${SLEEP}
+
+    - cmd: |
+            response=$(curl -s ${CURL_URL}/show/${JOBNAME} -H "${CURL_HDR}" ${CURL_ARGS})
+            echo "$response" | grep -q '"status_short": "Unable to start, out of quota for memory"'
       retcode: 0
       stdout: ""
       stderr: ""
