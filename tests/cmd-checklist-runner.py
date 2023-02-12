@@ -295,7 +295,6 @@ def stage_run_tests(runner: Runner):
 
 
 def stage_report(runner: Runner):
-
     tests_ok = 0
     tests_failed = 0
     for test in runner.tests:
