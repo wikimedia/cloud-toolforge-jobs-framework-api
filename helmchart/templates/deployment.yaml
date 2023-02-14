@@ -52,6 +52,12 @@ spec:
           name: nginx-config
           readOnly: true
           subPath: nginx.conf
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9000
+          initialDelaySeconds: 3
+          periodSeconds: 3
       serviceAccountName: jobs-api
       volumes:
       - hostPath:

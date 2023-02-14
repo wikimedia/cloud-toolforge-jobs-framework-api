@@ -38,5 +38,10 @@ data:
                 include uwsgi_params;
                 uwsgi_pass localhost:8000;
             }
+
+            location = /healthz {
+                include uwsgi_params;
+                uwsgi_pass localhost:8000;
+            }
         }
     }

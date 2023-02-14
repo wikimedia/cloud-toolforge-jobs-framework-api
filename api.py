@@ -17,6 +17,7 @@
 from flask import Flask
 from flask_restful import Api
 from tjf.metrics import metrics_init_app
+from tjf.healthz import Healthz
 from tjf.run import Run
 from tjf.show import Show
 from tjf.list import List
@@ -30,6 +31,7 @@ api = Api(app)
 
 metrics_init_app(app)
 
+api.add_resource(Healthz, "/healthz")
 api.add_resource(Run, "/api/v1/run/")
 api.add_resource(Show, "/api/v1/show/<name>")
 api.add_resource(List, "/api/v1/list/")
