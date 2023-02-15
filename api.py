@@ -1,4 +1,5 @@
 # Copyright (C) 2021 Arturo Borrero Gonzalez <aborrero@wikimedia.org>
+# Copyright (C) 2023 Taavi Väänänen <hi@taavi.wtf>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -14,34 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from flask import Flask
-from flask_restful import Api
-from tjf.metrics import metrics_init_app
-from tjf.healthz import Healthz
-from tjf.run import Run
-from tjf.show import Show
-from tjf.list import List
-from tjf.delete import Delete
-from tjf.restart import Restart
-from tjf.flush import Flush
-from tjf.images import Images, update_available_images
+from tjf.app import create_app
 
-app = Flask(__name__)
-api = Api(app)
-
-metrics_init_app(app)
-
-api.add_resource(Healthz, "/healthz")
-api.add_resource(Run, "/api/v1/run/")
-api.add_resource(Show, "/api/v1/show/<name>")
-api.add_resource(List, "/api/v1/list/")
-api.add_resource(Delete, "/api/v1/delete/<name>")
-api.add_resource(Restart, "/api/v1/restart/<name>")
-api.add_resource(Flush, "/api/v1/flush/")
-api.add_resource(Images, "/api/v1/images/")
-
-# before app startup!
-update_available_images()
+app = create_app()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
