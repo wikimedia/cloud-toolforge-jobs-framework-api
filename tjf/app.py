@@ -28,7 +28,7 @@ from tjf.flush import Flush
 from tjf.images import Images, update_available_images
 
 
-def create_app():
+def create_app(*, load_images=True):
     app = Flask(__name__)
     api = Api(app)
 
@@ -43,7 +43,8 @@ def create_app():
     api.add_resource(Flush, "/api/v1/flush/")
     api.add_resource(Images, "/api/v1/images/")
 
-    # before app startup!
-    update_available_images()
+    if load_images:
+        # before app startup!
+        update_available_images()
 
     return app

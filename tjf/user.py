@@ -17,7 +17,14 @@
 import os
 import yaml
 from flask import request
+from cryptography import x509
 from common.k8sclient import K8sClient
+
+
+class UserLoadingError(Exception):
+    """Custom error class for exceptions related to loading user data."""
+
+    pass
 
 
 class User:
@@ -64,18 +71,29 @@ class User:
     def from_request(self):
         header = "ssl-client-subject-dn"
         if header not in request.headers:
-            raise Exception(f"missing '{header}' header")
+            raise UserLoadingError(f"missing '{header}' header")
 
         # we are expecting something like 'CN=user,0=Toolforge'
-        value = request.headers.get(header)
-        for rawfield in value.split(","):
-            field = rawfield.strip()
-            if field.startswith("CN="):
-                name = field.split("=")[1]
-                return User(name=name)
+        try:
+            name_raw = request.headers.get(header)
+            name = x509.Name.from_rfc4514_string(name_raw)
+        except Exception as e:
+            raise UserLoadingError(f"Failed to parse certificate name '{name_raw}'") from e
 
-        # give it another try, in case we got just 'CN=user'
-        if value.strip().startswith("CN="):
-            return User(name=value.strip().split("=")[1])
+        cn = name.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+        organizations = [
+            attr.value for attr in name.get_attributes_for_oid(x509.NameOID.ORGANIZATION_NAME)
+        ]
 
-        raise Exception(f"couldn't understand SSL header '{header}': '{value}'")
+        if len(cn) != 1:
+            raise UserLoadingError(f"Failed to load name for certificate '{name_raw}'")
+
+        if organizations != ["toolforge"]:
+            raise UserLoadingError(
+                "This certificate can't access the Jobs API. "
+                "Double check you're logged in to the correct account? "
+                f"(got {organizations})"
+            )
+
+        common_name = cn[0].value
+        return self(name=common_name)
