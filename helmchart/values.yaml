@@ -4,7 +4,7 @@ replicas: 2
 webservice:
   image:
     repository: docker-registry.tools.wmflabs.org/toolforge-jobs-framework-api
-    tag: 390ed64
+    tag: 8a9b97e
     pullpolicy: Always
 nginx:
   image:
