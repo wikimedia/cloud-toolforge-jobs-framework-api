@@ -17,7 +17,3 @@ certificates:
     name: api-gateway-backend-ca
     kind: ClusterIssuer
     group: cert-manager.io
-
-nodeport:
-  name: nodeport-https
-  port: 30001

@@ -40,9 +40,6 @@ spec:
         image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}
         imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.nodeport.port }}
-          name: {{ .Values.nodeport.name }}
-          protocol: TCP
         - containerPort: 8443
           name: https
           protocol: TCP
@@ -51,9 +48,6 @@ spec:
           protocol: TCP
         resources: {}
         volumeMounts:
-        - mountPath: /etc/nginx/ssl
-          name: jobs-api-server-cert
-          readOnly: true
         - mountPath: /etc/nginx/api-gateway-ssl
           name: api-gateway-server-cert
           readOnly: true
@@ -87,9 +81,6 @@ spec:
             path: nginx.conf
           name: nginx-config
         name: nginx-config
-      - name: jobs-api-server-cert
-        secret:
-          secretName: jobs-api-server-cert
       - name: api-gateway-server-cert
         secret:
           secretName: {{ .Release.Name }}-api-gateway-server

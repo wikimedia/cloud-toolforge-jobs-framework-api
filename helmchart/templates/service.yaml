@@ -9,13 +9,8 @@ spec:
   selector:
     name: jobs-api
     {{- include "jobs-api.selectorLabels" . | nindent 4 }}
-  type: NodePort
+  type: ClusterIP
   ports:
-    - name: {{ .Values.nodeport.name }}
-      nodePort: {{ .Values.nodeport.port }}
-      port: {{ .Values.nodeport.port }}
-      targetPort: {{ .Values.nodeport.port }}
-      protocol: TCP
     - name: https
       port: 8443
       targetPort: 8443
