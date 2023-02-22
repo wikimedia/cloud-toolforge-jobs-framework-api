@@ -6,6 +6,11 @@ metadata:
   labels:
     name: jobs-api
     {{- include "jobs-api.labels" . | nindent 4 }}
+  annotations:
+    # use https://github.com/stakater/reloader (via the cert-manager deployment)
+    # to restart when certificates get renewed
+    configmap.reloader.stakater.com/reload: "nginx-config"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-api-gateway-server"
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -20,8 +25,7 @@ spec:
     spec:
       containers:
       - name: webservice
-        image: {{ .Values.webservice.image.repository }}:{{ .Values.webservice.image.tag
-          | default .Chart.AppVersion }}
+        image: {{ .Values.webservice.image.repository }}:{{ .Values.webservice.image.tag }}
         imagePullPolicy: {{ .Values.webservice.image.pullpolicy }}
         resources: {}
         volumeMounts:
@@ -33,12 +37,14 @@ spec:
         - mountPath: /var/lib/sss/pipes
           name: sssd-pipes
       - name: nginx
-        image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag
-          | default .Chart.AppVersion }}
+        image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}
         imagePullPolicy: Always
         ports:
         - containerPort: {{ .Values.nodeport.port }}
           name: {{ .Values.nodeport.name }}
+          protocol: TCP
+        - containerPort: 8443
+          name: https
           protocol: TCP
         - containerPort: 9000
           name: metrics
@@ -47,6 +53,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: jobs-api-server-cert
+          readOnly: true
+        - mountPath: /etc/nginx/api-gateway-ssl
+          name: api-gateway-server-cert
           readOnly: true
         - mountPath: /etc/nginx/nginx.conf
           name: nginx-config
@@ -81,3 +90,6 @@ spec:
       - name: jobs-api-server-cert
         secret:
           secretName: jobs-api-server-cert
+      - name: api-gateway-server-cert
+        secret:
+          secretName: {{ .Release.Name }}-api-gateway-server

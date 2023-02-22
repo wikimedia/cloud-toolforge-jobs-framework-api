@@ -21,13 +21,32 @@ data:
             ssl_certificate_key    /etc/nginx/ssl/tls.key;
             ssl_client_certificate /var/run/secrets/kubernetes.io/serviceaccount/ca.crt;
             ssl_verify_client      on;
-            ssl_protocols          TLSv1.1 TLSv1.2;
+            ssl_protocols          TLSv1.2;
             ssl_ciphers            HIGH:!aNULL:!MD5;
 
             location / {
                 include uwsgi_params;
-                uwsgi_pass localhost:8000;
-                uwsgi_param HTTP_SSL_CLIENT_SUBJECT_DN $ssl_client_s_dn;
+                uwsgi_pass 127.0.0.1:8000;
+            }
+        }
+
+        server {
+            listen 8443 ssl;
+
+            # NOTE! This certificate stuff is really important, since both the
+            # API gateway (the client in this context) and jobs-api (the server)
+            # verify that each other have certificates signed by the api gateway
+            # backend CA.
+            ssl_certificate        /etc/nginx/api-gateway-ssl/tls.crt;
+            ssl_certificate_key    /etc/nginx/api-gateway-ssl/tls.key;
+            ssl_client_certificate /etc/nginx/api-gateway-ssl/ca.crt;
+            ssl_verify_client      on;
+            ssl_protocols          TLSv1.2;
+            ssl_ciphers            HIGH:!aNULL:!MD5;
+
+            location / {
+                include uwsgi_params;
+                uwsgi_pass 127.0.0.1:8000;
             }
         }
 
@@ -36,12 +55,12 @@ data:
 
             location = /metrics {
                 include uwsgi_params;
-                uwsgi_pass localhost:8000;
+                uwsgi_pass 127.0.0.1:8000;
             }
 
             location = /healthz {
                 include uwsgi_params;
-                uwsgi_pass localhost:8000;
+                uwsgi_pass 127.0.0.1:8000;
             }
         }
     }

@@ -12,6 +12,12 @@ nginx:
     tag: latest
     pullpolicy: Always
 
+certificates:
+  apiGatewayCa:
+    name: api-gateway-backend-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+
 nodeport:
-  name: https
+  name: nodeport-https
   port: 30001

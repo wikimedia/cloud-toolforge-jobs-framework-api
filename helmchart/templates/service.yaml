@@ -16,3 +16,7 @@ spec:
       port: {{ .Values.nodeport.port }}
       targetPort: {{ .Values.nodeport.port }}
       protocol: TCP
+    - name: https
+      port: 8443
+      targetPort: 8443
+      protocol: TCP
