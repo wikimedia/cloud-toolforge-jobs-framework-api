@@ -190,7 +190,7 @@ class Job:
                     "restartPolicy": restartpolicy,
                     "containers": [
                         {
-                            "name": self.jobname,
+                            "name": "job",
                             "image": self.image,
                             "workingDir": "/data/project/{}".format(self.username),
                             "command": self.command.generate_for_k8s(),
