@@ -26,6 +26,7 @@ data:
 
             location / {
                 include uwsgi_params;
+                uwsgi_param HTTP_SSL_CLIENT_SUBJECT_DN $ssl_client_s_dn;
                 uwsgi_pass 127.0.0.1:8000;
             }
         }
