@@ -1,8 +1,8 @@
 ---
 - envvars:
-    - CURL_URL: "https://jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001/api/v1"
-      CURL_HDR: "Host:jobs.svc.toolsbeta.eqiad1.wikimedia.cloud"
-      CURL_ARGS: "--cert /data/project/tf-test/.toolskube/client.crt --key /data/project/tf-test/.toolskube/client.key --resolve jobs.svc.toolsbeta.eqiad1.wikimedia.cloud:30001:127.0.0.1 -k"
+    - CURL_URL: "https://api.svc.toolsbeta.eqiad1.wikimedia.cloud:30003/jobs/api/v1"
+      CURL_HDR: "Host:api.svc.toolsbeta.eqiad1.wikimedia.cloud"
+      CURL_ARGS: "--cert /data/project/tf-test/.toolskube/client.crt --key /data/project/tf-test/.toolskube/client.key --resolve api.svc.toolsbeta.eqiad1.wikimedia.cloud:30003:127.0.0.1 -k"
       JOBNAME: "normaljob"
       SLEEP_CMD: ./sleep40.sh
       CRONJOBNAME: "cronjob"
