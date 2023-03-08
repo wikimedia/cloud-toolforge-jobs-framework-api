@@ -2,7 +2,7 @@
 - envvars:
     - CURL_URL: "https://api.svc.toolsbeta.eqiad1.wikimedia.cloud:30003/jobs/api/v1"
       CURL_HDR: "Host:api.svc.toolsbeta.eqiad1.wikimedia.cloud"
-      CURL_ARGS: "--cert /data/project/tf-test/.toolskube/client.crt --key /data/project/tf-test/.toolskube/client.key --resolve api.svc.toolsbeta.eqiad1.wikimedia.cloud:30003:127.0.0.1 -k"
+      CURL_ARGS: "--cert ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test/.toolskube/client.crt --key ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test/.toolskube/client.key --resolve api.svc.toolsbeta.eqiad1.wikimedia.cloud:30003:127.0.0.1 -k"
       JOBNAME: "normaljob"
       SLEEP_CMD: ./sleep40.sh
       CRONJOBNAME: "cronjob"
@@ -14,7 +14,7 @@
       LOG_JOB: logjob
       CUSTOM_LOG_FILE: custom-log-file
       LOG_JOB_CMD: log.sh
-      TOOLHOME: /data/project/tf-test
+      TOOLHOME: ~/.local/toolforge-lima-kilo/chroot/data/project/tf-test
 ---
 - name: "list images"
   tests:
@@ -577,7 +577,7 @@
 
 - name: job should log canary and error-canary strings to custom-log-file.out
   tests:
-    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}2" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true" -d "filelog_stdout=${TOOLHOME}/${CUSTOM_LOG_FILE}.out" -d "filelog_stderr=${TOOLHOME}/${CUSTOM_LOG_FILE}.out"
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}2" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true" -d "filelog_stdout=${CUSTOM_LOG_FILE}.out" -d "filelog_stderr=${CUSTOM_LOG_FILE}.out"
       retcode: 0
       stdout: "201"
       stderr: ""
@@ -598,7 +598,7 @@
 - name: job should log stdout and stderr to custom log files
   tests:
     # run a job that logs canary string to custom-log-file2.out and error-canary string to custom-log-file.err
-    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}3" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true" -d "filelog_stdout=${TOOLHOME}/${CUSTOM_LOG_FILE}2.out" -d "filelog_stderr=${TOOLHOME}/${CUSTOM_LOG_FILE}.err"
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${LOG_JOB}3" -d "imagename=${IMG}" -d "cmd=./${LOG_JOB_CMD}" -d "filelog=true" -d "filelog_stdout=${CUSTOM_LOG_FILE}2.out" -d "filelog_stderr=${CUSTOM_LOG_FILE}.err"
       retcode: 0
       stdout: "201"
       stderr: ""
