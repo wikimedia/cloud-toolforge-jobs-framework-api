@@ -15,7 +15,10 @@
 #
 
 import time
+
+import requests
 from tjf.error import TjfError, TjfValidationError
+from tjf.k8s_errors import create_error_from_k8s_response
 from tjf.labels import labels_selector
 from tjf.job import Job, validate_jobname
 from tjf.user import User
@@ -71,7 +74,10 @@ def validate_job_limits(user: User, job: Job):
 
 def create_job(user: User, job: Job):
     validate_job_limits(user, job)
-    return user.kapi.create_object(job.k8s_type, job.get_k8s_object())
+    try:
+        return user.kapi.create_object(job.k8s_type, job.get_k8s_object())
+    except requests.exceptions.HTTPError as e:
+        raise create_error_from_k8s_response(e, job, user)
 
 
 def delete_job(user: User, jobname: str):
@@ -137,7 +143,10 @@ def _launch_manual_cronjob(user: User, job: Job):
     cronjob = user.kapi.get_object("cronjobs", job.jobname)
     metadata = utils.dict_get_object(cronjob, "metadata")
 
-    user.kapi.create_object("jobs", job.get_k8s_single_run_object(metadata["uid"]))
+    try:
+        user.kapi.create_object("jobs", job.get_k8s_single_run_object(metadata["uid"]))
+    except requests.exceptions.HTTPError as e:
+        raise create_error_from_k8s_response(e, job, user)
 
 
 def restart_job(user: User, job: Job):
