@@ -19,15 +19,16 @@ import yaml
 from flask import request
 from cryptography import x509
 from common.k8sclient import K8sClient
+from tjf.error import TjfClientError
 
 
 AUTH_HEADER = "ssl-client-subject-dn"
 
 
-class UserLoadingError(Exception):
+class UserLoadingError(TjfClientError):
     """Custom error class for exceptions related to loading user data."""
 
-    pass
+    http_status_code = 403
 
 
 class User:

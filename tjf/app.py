@@ -15,8 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_restful import Api
+from tjf.error import TjfError
 from tjf.healthz import Healthz
 from tjf.metrics import metrics_init_app
 from tjf.run import Run
@@ -28,9 +29,24 @@ from tjf.flush import Flush
 from tjf.images import Images, update_available_images
 
 
+class TjfApi(Api):
+    """Custom Api class for jobs-api to provide custom error handling."""
+
+    def handle_error(self, e):
+        """Custom error handler."""
+        if not isinstance(e, TjfError):
+            return super().handle_error(e)
+
+        message = str(e)
+        if e.__cause__:
+            message += f" ({str(e.__cause__)})"
+
+        return jsonify({"message": message, "data": e.data}), e.http_status_code
+
+
 def create_app(*, load_images=True):
     app = Flask(__name__)
-    api = Api(app)
+    api = TjfApi(app)
 
     metrics_init_app(app)
 
