@@ -96,10 +96,7 @@ def _handle_k8s_exception(e: requests.exceptions.HTTPError, job: Job, user: User
 
 class Run(Resource):
     def post(self):
-        try:
-            user = User.from_request()
-        except Exception as e:
-            return f"Exception: {e}", 401
+        user = User.from_request()
 
         args = parser.parse_args()
 

@@ -21,10 +21,7 @@ from tjf.ops import delete_job
 
 class Delete(Resource):
     def delete(self, name):
-        try:
-            user = User.from_request()
-        except Exception as e:
-            return f"Exception: {e}", 401
+        user = User.from_request()
 
         delete_job(user=user, jobname=name)
         return "", 200

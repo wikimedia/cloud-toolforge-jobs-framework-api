@@ -90,10 +90,7 @@ def image_get_url(name: str) -> str:
 
 class Images(Resource):
     def get(self):
-        try:
-            user = User.from_request()  # noqa:F841
-        except Exception as e:
-            return f"Exception: {e}", 401
+        user = User.from_request()  # noqa:F841
 
         return [
             {

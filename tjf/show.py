@@ -21,10 +21,7 @@ from tjf.user import User
 
 class Show(Resource):
     def get(self, name):
-        try:
-            user = User.from_request()
-        except Exception as e:
-            return f"Exception: {e}", 401
+        user = User.from_request()
 
         job = find_job(user=user, jobname=name)
         if job:
