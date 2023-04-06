@@ -1,4 +1,5 @@
 from flask_restful import Resource
+from tjf.error import TjfValidationError
 from tjf.user import User
 from tjf.ops import find_job, restart_job
 
@@ -9,11 +10,8 @@ class Restart(Resource):
 
         job = find_job(user=user, jobname=name)
         if not job:
-            return {}, 404
+            raise TjfValidationError(f"Job '{name}' does not exist", http_status_code=404)
 
-        try:
-            restart_job(user=user, job=job)
-        except Exception as e:
-            return f"ERROR: {e}", 400
+        restart_job(user=user, job=job)
 
         return "", 200

@@ -18,6 +18,8 @@ import re
 from decimal import Decimal, InvalidOperation  # for parse_quantity below
 from typing import Set
 
+from tjf.error import TjfValidationError
+
 
 def dict_get_object(dict, kind):
     for o in dict:
@@ -63,7 +65,7 @@ def validate_kube_quant(string: str):
         if suffix in valid_suffixes:
             return string
 
-    raise Exception(f"{string} is not a valid Kubernetes quantity")
+    raise TjfValidationError(f"{string} is not a valid Kubernetes quantity")
 
 
 # Copyright 2019 The Kubernetes Authors.
@@ -129,7 +131,7 @@ def parse_quantity(quantity):
     try:
         number = Decimal(number)
     except InvalidOperation:
-        raise ValueError("Invalid number format: {}".format(number))
+        raise TjfValidationError("Invalid number format: {}".format(number))
 
     if suffix is None:
         return number
@@ -139,14 +141,14 @@ def parse_quantity(quantity):
     elif len(suffix) == 1:
         base = 1000
     else:
-        raise ValueError("{} has unknown suffix".format(quantity))
+        raise TjfValidationError("{} has unknown suffix".format(quantity))
 
     # handly SI inconsistency
     if suffix == "ki":
-        raise ValueError("{} has unknown suffix".format(quantity))
+        raise TjfValidationError("{} has unknown suffix".format(quantity))
 
     if suffix[0] not in exponents:
-        raise ValueError("{} has unknown suffix".format(quantity))
+        raise TjfValidationError("{} has unknown suffix".format(quantity))
 
     exponent = Decimal(exponents[suffix[0]])
     return number * (base**exponent)

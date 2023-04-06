@@ -21,6 +21,7 @@ import yaml
 from flask_restful import Resource
 
 from common.k8sclient import K8sClient
+from tjf.error import TjfClientError, TjfError
 from tjf.user import User
 
 
@@ -63,7 +64,7 @@ def update_available_images():
         AVAILABLE_IMAGES.append(image)
 
     if len(AVAILABLE_IMAGES) < 1:
-        raise Exception("Empty list of available images")
+        raise TjfError("Empty list of available images")
 
 
 def image_by_name(name: str) -> Optional[Image]:
@@ -83,7 +84,7 @@ def image_by_container_url(url: str) -> Optional[Image]:
 def image_get_url(name: str) -> str:
     image = image_by_name(name)
     if not image:
-        raise Exception(f"No such image {image}")
+        raise TjfClientError(f"No such image {image}", http_status_code=404)
 
     return image.container
 

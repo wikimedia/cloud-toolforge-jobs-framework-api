@@ -16,6 +16,7 @@
 
 import json
 import requests
+from tjf.error import TjfError, TjfValidationError
 from tjf.job import Job
 from flask_restful import Resource, reqparse
 from tjf.images import image_by_name, image_get_url
@@ -101,10 +102,12 @@ class Run(Resource):
         args = parser.parse_args()
 
         if not image_by_name(args.imagename):
-            return "HTTP 400: invalid container image", 400
+            raise TjfValidationError(f"Invalid container image '{args.imagename}'")
 
         if find_job(user=user, jobname=args.name) is not None:
-            return "HTTP 409: a job with the same name exists already", 409
+            raise TjfValidationError(
+                "A job with the same name exists already", http_status_code=409
+            )
 
         command = Command.from_api(
             args.cmd, args.filelog, args.filelog_stdout, args.filelog_stderr, args.name
@@ -129,6 +132,8 @@ class Run(Resource):
             result = create_job(user=user, job=job)
         except requests.exceptions.HTTPError as e:
             result = _handle_k8s_exception(e, job, user)
+        except TjfError as e:
+            raise e
         except Exception as e:
-            result = f"ERROR: {str(e)}", 400
+            raise TjfError("Unable to start job") from e
         return result

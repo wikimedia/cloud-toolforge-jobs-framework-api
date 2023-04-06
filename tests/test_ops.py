@@ -1,6 +1,7 @@
 import pytest
 
 from tests.fake_k8s import LIMIT_RANGE_OBJECT, FakeJob
+from tjf.error import TjfValidationError
 from tjf.ops import validate_job_limits
 
 
@@ -34,7 +35,7 @@ def test_validate_job_limits_under_minimum(user_with_limit_range):
     job = FakeJob(memory="50Mi")
 
     with pytest.raises(
-        Exception,
+        TjfValidationError,
         match="Requested memory 50Mi is less than minimum required per container \\(100Mi\\)",
     ):
         validate_job_limits(user_with_limit_range, job)
@@ -44,7 +45,7 @@ def test_validate_job_limits_over_maximum(user_with_limit_range):
     job = FakeJob(cpu="2.5")
 
     with pytest.raises(
-        Exception,
+        TjfValidationError,
         match="Requested CPU 2.5 is over maximum allowed per container \\(1\\)",
     ):
         validate_job_limits(user_with_limit_range, job)

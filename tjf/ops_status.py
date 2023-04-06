@@ -4,6 +4,7 @@
 from datetime import datetime
 from typing import Optional
 from common.k8sclient import KUBERNETES_DATE_FORMAT
+from tjf.error import TjfError
 from tjf.labels import labels_selector
 from tjf.job import Job
 from tjf.user import User
@@ -135,7 +136,7 @@ def refresh_job_short_status(user: User, job: Job):
     elif job.k8s_type == "jobs":
         _refresh_status_job(user, job)
     else:
-        raise Exception(f"couldn't refresh status for unknown job type: {job}")
+        raise TjfError(f"Unable to refresh status for unknown job type: {job}")
 
 
 def refresh_job_long_status(user: User, job: Job):

@@ -15,6 +15,7 @@
 #
 
 from flask_restful import Resource
+from tjf.error import TjfValidationError
 from tjf.ops import find_job
 from tjf.user import User
 
@@ -24,8 +25,7 @@ class Show(Resource):
         user = User.from_request()
 
         job = find_job(user=user, jobname=name)
-        if job:
-            return job.get_api_object()
-
         if not job:
-            return {}, 404
+            raise TjfValidationError(f"Job '{name}' does not exist", http_status_code=404)
+
+        return job.get_api_object()

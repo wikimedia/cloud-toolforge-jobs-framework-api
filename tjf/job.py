@@ -16,6 +16,7 @@
 
 import re
 import time
+from tjf.error import TjfError, TjfValidationError
 from tjf.images import image_by_container_url
 import tjf.utils as utils
 from common.k8sclient import K8sClient
@@ -34,8 +35,9 @@ def validate_jobname(jobname: str):
         return
 
     if not JOBNAME_PATTERN.match(jobname):
-        # TODO: this could be a more 'custom' exception
-        raise Exception(f"job name doesn't match regex {JOBNAME_PATTERN.pattern}")
+        raise TjfValidationError(
+            "Invalid job name. See the documentation for the naming rules: https://w.wiki/6YL8"
+        )
 
 
 def validate_emails(emails: str):
@@ -45,8 +47,9 @@ def validate_emails(emails: str):
 
     values = ["none", "all", "onfailure", "onfinish"]
     if emails not in values:
-        # TODO: this could be a more custom exception
-        raise Exception(f"emails value not supported. We only understand: {values}")
+        raise TjfValidationError(
+            f"Invalid email configuration value. Supported values are: {values}"
+        )
 
 
 JOB_DEFAULT_MEMORY = "512Mi"
@@ -118,7 +121,7 @@ class Job:
             cont = False
             podspec = spec
         else:
-            raise Exception(f"received a kubernetes object we don't understand: {object}")
+            raise TjfError("Unable to parse Kubernetes object", data={"object": object})
 
         metadata = utils.dict_get_object(object, "metadata")
         jobname = metadata["name"]

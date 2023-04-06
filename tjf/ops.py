@@ -15,6 +15,7 @@
 #
 
 import time
+from tjf.error import TjfError, TjfValidationError
 from tjf.labels import labels_selector
 from tjf.job import Job, validate_jobname
 from tjf.user import User
@@ -37,7 +38,7 @@ def validate_job_limits(user: User, job: Job):
             if "cpu" in min_limits:
                 cpu_min = min_limits["cpu"]
                 if parsed_cpu < utils.parse_quantity(cpu_min):
-                    raise Exception(
+                    raise TjfValidationError(
                         f"Requested CPU {job.cpu} is less than minimum "
                         f"required per container ({cpu_min})"
                     )
@@ -45,7 +46,7 @@ def validate_job_limits(user: User, job: Job):
             if "cpu" in max_limits:
                 cpu_max = max_limits["cpu"]
                 if parsed_cpu > utils.parse_quantity(cpu_max):
-                    raise Exception(
+                    raise TjfValidationError(
                         f"Requested CPU {job.cpu} is over maximum "
                         f"allowed per container ({cpu_max})"
                     )
@@ -55,14 +56,14 @@ def validate_job_limits(user: User, job: Job):
             if "memory" in min_limits:
                 memory_min = min_limits["memory"]
                 if parsed_memory < utils.parse_quantity(memory_min):
-                    raise Exception(
+                    raise TjfValidationError(
                         f"Requested memory {job.memory} is less than minimum "
                         f"required per container ({memory_min})"
                     )
             if "memory" in max_limits:
                 memory_max = max_limits["memory"]
                 if parsed_memory > utils.parse_quantity(memory_max):
-                    raise Exception(
+                    raise TjfValidationError(
                         f"Requested memory {job.memory} is over maximum "
                         f"allowed per container ({memory_max})"
                     )
@@ -76,7 +77,7 @@ def create_job(user: User, job: Job):
 def delete_job(user: User, jobname: str):
     try:
         validate_jobname(jobname)
-    except Exception:
+    except TjfValidationError:
         # invalid job name, ignore
         return
 
@@ -101,7 +102,7 @@ def find_job(user: User, jobname: str):
 def list_all_jobs(user: User, jobname: str):
     try:
         validate_jobname(jobname)
-    except Exception:
+    except TjfValidationError:
         # invalid job name, ignore
         return []
 
@@ -156,6 +157,6 @@ def restart_job(user: User, job: Job):
         # Simply delete the pods and let Kubernetes re-create them
         user.kapi.delete_objects("pods", selector=selector)
     elif job.k8s_type == "jobs":
-        raise Exception("single jobs can't be restarted")
+        raise TjfValidationError("Unable to restart a single job")
     else:
-        raise Exception(f"couldn't restart unknown job type: {job}")
+        raise TjfError(f"Unable to restart unknown job type: {job}")

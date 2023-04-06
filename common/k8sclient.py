@@ -5,6 +5,8 @@ import requests
 import yaml
 from typing import Optional
 
+from tjf.error import TjfError
+
 
 KUBERNETES_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -14,7 +16,7 @@ def _find_cfg_obj(config, kind, name):
     for obj in config[kind]:
         if obj["name"] == name:
             return obj[kind[:-1]]
-    raise KeyError("Key {} not found in {} section of config".format(name, kind))
+    raise TjfError("Key {} not found in {} section of config".format(name, kind))
 
 
 class K8sClient:

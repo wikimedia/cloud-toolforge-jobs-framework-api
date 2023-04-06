@@ -29,3 +29,9 @@ class TjfClientError(TjfError):
     """Custom error class for jobs-api errors caused by the client."""
 
     http_status_code = 400
+
+
+class TjfValidationError(TjfClientError):
+    """Custom error class for jobs-api errors caused by invalid data."""
+
+    pass

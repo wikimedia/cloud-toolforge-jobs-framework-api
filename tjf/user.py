@@ -19,7 +19,7 @@ import yaml
 from flask import request
 from cryptography import x509
 from common.k8sclient import K8sClient
-from tjf.error import TjfClientError
+from tjf.error import TjfClientError, TjfError
 
 
 AUTH_HEADER = "ssl-client-subject-dn"
@@ -50,10 +50,10 @@ class User:
             with open(path) as file:
                 config = yaml.safe_load(file)
         except Exception as e:
-            raise Exception(f"couldn't read kubeconfig for user '{self.name}': {e}")
+            raise TjfError(f"Failed to read kubeconfig for user '{self.name}'") from e
 
         if config is None:
-            raise Exception(f"user file '{path}' is empty")
+            raise TjfError(f"User kubeconfig file '{path}' is empty")
 
         # copied from maintain_kubeusers :-P
         if all(
@@ -69,7 +69,7 @@ class User:
         ):
             return config
         else:
-            raise Exception(f"invalid kubeconfig for user '{self.name}'")
+            raise TjfError(f"Invalid kubeconfig for user '{self.name}'")
 
     @classmethod
     def from_request(self):
