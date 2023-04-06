@@ -1,6 +1,7 @@
 import pytest
-import tests.fake_k8s as fake_k8s
 from common.k8sclient import K8sClient
+from tests.fake_k8s import FAKE_IMAGE_CONFIG
+from tjf.app import create_app
 from tjf.images import image_get_url, update_available_images, AVAILABLE_IMAGES
 
 
@@ -17,7 +18,7 @@ def fake_k8s_client(monkeypatch):
                     "apiVersion": "v1",
                     # spec omitted, since it's not really relevant
                     "data": {
-                        "images-v1.yaml": fake_k8s.fake_images,
+                        "images-v1.yaml": FAKE_IMAGE_CONFIG,
                     },
                 }
 
@@ -45,3 +46,20 @@ def test_available_images_len(images_available):
 def test_image_get_url(images_available, name, expected):
     """Basic test for the image_get_url() func."""
     assert image_get_url(name) == expected
+
+
+@pytest.fixture()
+def client(fake_k8s_client):
+    return create_app().test_client()
+
+
+def test_get_images_endpoint(client, fake_user):
+    response = client.get("/api/v1/images/", headers=fake_user)
+    assert response.status_code == 200
+
+    image_names = [image["shortname"] for image in response.json]
+    assert "node16" in image_names
+
+    assert "php7.4" in image_names
+    assert "tf-php74" not in image_names
+    assert "php7.3" not in image_names

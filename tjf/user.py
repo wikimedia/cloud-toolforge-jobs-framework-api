@@ -21,6 +21,9 @@ from cryptography import x509
 from common.k8sclient import K8sClient
 
 
+AUTH_HEADER = "ssl-client-subject-dn"
+
+
 class UserLoadingError(Exception):
     """Custom error class for exceptions related to loading user data."""
 
@@ -69,13 +72,12 @@ class User:
 
     @classmethod
     def from_request(self):
-        header = "ssl-client-subject-dn"
-        if header not in request.headers:
-            raise UserLoadingError(f"missing '{header}' header")
+        if AUTH_HEADER not in request.headers:
+            raise UserLoadingError(f"missing '{AUTH_HEADER}' header")
 
-        # we are expecting something like 'CN=user,0=Toolforge'
+        # we are expecting something like 'CN=user,O=Toolforge'
         try:
-            name_raw = request.headers.get(header)
+            name_raw = request.headers.get(AUTH_HEADER)
             name = x509.Name.from_rfc4514_string(name_raw)
         except Exception as e:
             raise UserLoadingError(f"Failed to parse certificate name '{name_raw}'") from e

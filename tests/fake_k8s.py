@@ -3,7 +3,7 @@ from typing import Optional
 from tjf.job import JOB_DEFAULT_CPU, JOB_DEFAULT_MEMORY
 
 
-fake_images = """
+FAKE_IMAGE_CONFIG = """
 node12:
   aliases:
   - tf-node12

@@ -1,6 +1,6 @@
 import pytest
 from tjf.app import create_app
-from tjf.user import User, K8sClient, UserLoadingError
+from tjf.user import AUTH_HEADER, User, UserLoadingError
 
 
 @pytest.fixture()
@@ -8,19 +8,8 @@ def app():
     return create_app(load_images=False)
 
 
-@pytest.fixture()
-def patch_kube_config_loading(monkeypatch):
-    def noop(*args, **kwargs):
-        return True
-
-    monkeypatch.setattr(User, "validate_kubeconfig", noop)
-    monkeypatch.setattr(K8sClient, "from_file", noop)
-
-
 def test_User_from_request_successful(app, patch_kube_config_loading):
-    with app.test_request_context(
-        "/foo", headers={"ssl-client-subject-dn": "O=toolforge,CN=some-tool"}
-    ):
+    with app.test_request_context("/foo", headers={AUTH_HEADER: "O=toolforge,CN=some-tool"}):
         user = User.from_request()
 
     assert user.name == "some-tool"
@@ -50,6 +39,6 @@ invalid_cn_data = [
     "cn,expected_error", invalid_cn_data, ids=[data[0] for data in invalid_cn_data]
 )
 def test_User_from_request_invalid(app, patch_kube_config_loading, cn, expected_error):
-    with app.test_request_context("/foo", headers={"ssl-client-subject-dn": cn}):
+    with app.test_request_context("/foo", headers={AUTH_HEADER: cn}):
         with pytest.raises(UserLoadingError, match=expected_error):
             assert User.from_request() is None
