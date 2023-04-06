@@ -9,7 +9,7 @@
       CONTJOBNAME: "continuousjob"
       # this must have state: stable
       IMG: "bullseye"
-      SLEEP: "5"
+      SLEEP: "10"
       KUBECTL_ARGS: -n tool-tf-test
       LOG_JOB: logjob
       CUSTOM_LOG_FILE: custom-log-file
@@ -176,7 +176,7 @@
 - name: "create retried job with with retry not within acceptable values should fail"
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${JOBNAME}" -d "imagename=${IMG}" -d "cmd=${SLEEP_CMD}" -d "retry=10" -f
-      # the server returns 500 (because k8s returns 409) and curl returns 22
+      # the server returns HTTP 400 and curl returns 22
       retcode: 22
       stdout: ""
       stderr: ""
@@ -266,7 +266,7 @@
 - name: "create duplicated cronjob should fail"
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=${SLEEP_CMD}" -d "schedule=*/10 * * * *" -f
-      # the server returns 500 (because k8s returns 409) and curl returns 22
+      # the server returns 409 (because k8s returns 409) and curl returns 22
       retcode: 22
       stdout: ""
       stderr: ""
@@ -274,7 +274,7 @@
 - name: "create cronjob with wrong schedule should fail"
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CRONJOBNAME}" -d "imagename=${IMG}" -d "cmd=${SLEEP_CMD}" -d "schedule=wrong" -f
-      # the server returns 422 (because k8s returns 422) and curl returns 22
+      # the server returns 400 (because k8s returns 422) and curl returns 22
       retcode: 22
       stdout: ""
       stderr: ""
@@ -364,7 +364,7 @@
   tests:
     - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
       retcode: 0
-      stdout: "\"HTTP 409: a job with the same name exists already\""
+      stdout: '{"data":{},"message":"A job with the same name exists already"}'
       stderr: ""
 
 - name: "show continuous job, all fields are present"
@@ -673,10 +673,10 @@
     # give k8s a chance to do its thing
     - cmd: sleep ${SLEEP}
     # quota for continuous jobs created in faketoolforge is 3, this should fail
-    - cmd: curl --fail-with-body -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}4" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true"
-      retcode: 22
+    - cmd: curl -s -X POST ${CURL_URL}/run/ -H "${CURL_HDR}" ${CURL_ARGS} -d "name=${CONTJOBNAME}4" -d "imagename=${IMG}" -d "cmd=true" -d "continuous=true" | jq -r '.message'
+      retcode: 0
       stdout: >-
-        "HTTP 403: out of quota for this kind of job. Please check https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework#Job_quotas"
+        Out of quota for this kind of job. Please see https://w.wiki/6YLP for details.
       stderr: ""
     - cmd: curl -s -X DELETE ${CURL_URL}/flush/ -H "${CURL_HDR}" ${CURL_ARGS}
       retcode: 0
