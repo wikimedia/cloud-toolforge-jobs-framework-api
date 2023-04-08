@@ -29,21 +29,43 @@ def validate_job_limits(user: User, job: Job):
         if limit["type"] != "Container":
             continue
 
+        min_limits = limit["min"]
         max_limits = limit["max"]
-        if "cpu" in max_limits and job.cpu:
-            cpu_max = max_limits["cpu"]
-            if utils.parse_quantity(job.cpu) > utils.parse_quantity(cpu_max):
-                raise Exception(
-                    f"Requested CPU {job.cpu} is over maximum allowed per container ({cpu_max})"
-                )
 
-        if "memory" in max_limits and job.memory:
-            memory_max = max_limits["memory"]
-            if utils.parse_quantity(job.memory) > utils.parse_quantity(memory_max):
-                raise Exception(
-                    f"Requested memory {job.memory} is over maximum"
-                    + f"allowed per container ({memory_max})"
-                )
+        if job.cpu:
+            parsed_cpu = utils.parse_quantity(job.cpu)
+            if "cpu" in min_limits:
+                cpu_min = min_limits["cpu"]
+                if parsed_cpu < utils.parse_quantity(cpu_min):
+                    raise Exception(
+                        f"Requested CPU {job.cpu} is less than minimum "
+                        f"required per container ({cpu_min})"
+                    )
+
+            if "cpu" in max_limits:
+                cpu_max = max_limits["cpu"]
+                if parsed_cpu > utils.parse_quantity(cpu_max):
+                    raise Exception(
+                        f"Requested CPU {job.cpu} is over maximum "
+                        f"allowed per container ({cpu_max})"
+                    )
+
+        if job.memory:
+            parsed_memory = utils.parse_quantity(job.memory)
+            if "memory" in min_limits:
+                memory_min = min_limits["memory"]
+                if parsed_memory < utils.parse_quantity(memory_min):
+                    raise Exception(
+                        f"Requested memory {job.memory} is less than minimum "
+                        f"required per container ({memory_min})"
+                    )
+            if "memory" in max_limits:
+                memory_max = max_limits["memory"]
+                if parsed_memory > utils.parse_quantity(memory_max):
+                    raise Exception(
+                        f"Requested memory {job.memory} is over maximum "
+                        f"allowed per container ({memory_max})"
+                    )
 
 
 def create_job(user: User, job: Job):

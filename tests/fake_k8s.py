@@ -1,3 +1,8 @@
+from typing import Optional
+
+from tjf.job import JOB_DEFAULT_CPU, JOB_DEFAULT_MEMORY
+
+
 fake_images = """
 node12:
   aliases:
@@ -426,3 +431,47 @@ JOB_CONT_NO_EMAILS_YES_FILELOG_CUSTOM_STDOUT_STDERR = {
         },
     },
 }
+
+
+LIMIT_RANGE_OBJECT = {
+    "apiVersion": "v1",
+    "kind": "LimitRange",
+    "metadata": {
+        "name": "tool-test-tool",
+        "namespace": "tool-test-tool",
+    },
+    "spec": {
+        "limits": [
+            {
+                "type": "Container",
+                "default": {
+                    "cpu": "500m",
+                    "memory": "512Mi",
+                },
+                "defaultRequest": {
+                    "cpu": "150m",
+                    "memory": "256Mi",
+                },
+                "max": {
+                    "cpu": "1",
+                    "memory": "4Gi",
+                },
+                "min": {
+                    "cpu": "50m",
+                    "memory": "100Mi",
+                },
+            }
+        ]
+    },
+}
+
+
+class FakeJob:
+    def __init__(
+        self,
+        *,
+        cpu: Optional[str] = None,
+        memory: Optional[str] = None,
+    ) -> None:
+        self.cpu = cpu or JOB_DEFAULT_CPU
+        self.memory = memory or JOB_DEFAULT_MEMORY
