@@ -143,9 +143,6 @@ def restart_job(user: User, job: Job):
     selector = labels_selector(job.jobname, user.name, job.k8s_type)
 
     if job.k8s_type == "cronjobs":
-        if not user.kapi.get_objects("jobs", selector=selector):
-            raise Exception("job is currently not running")
-
         # Delete currently running jobs to avoid duplication
         user.kapi.delete_objects("jobs", selector=selector)
         user.kapi.delete_objects("pods", selector=selector)
