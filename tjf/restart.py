@@ -14,5 +14,9 @@ class Restart(Resource):
         if not job:
             return {}, 404
 
-        restart_job(user=user, job=job)
+        try:
+            restart_job(user=user, job=job)
+        except Exception as e:
+            return f"ERROR: {e}", 400
+
         return "", 200
