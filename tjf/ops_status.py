@@ -25,6 +25,9 @@ def _get_quota_error(message: str) -> str:
 
 
 def _get_job_object_status(user: User, job: dict, for_complete=False) -> Optional[str]:
+    if not job:
+        return None
+
     status_dict = utils.dict_get_object(job, "status")
     conditions_dict = status_dict.get("conditions", [])
     for condition in conditions_dict:
@@ -60,6 +63,65 @@ def _get_job_object_status(user: User, job: dict, for_complete=False) -> Optiona
             return message
 
 
+def _refresh_status_cronjob_from_restarted_cronjob(
+    user: User, original_cronjob: Job
+) -> Optional[str]:
+    """This function scans all job resources that may or may not be manually defined to see if
+    it may be related to the original_cronjob."""
+    original_cronjob_metadata = original_cronjob.k8s_object.get("metadata", None)
+    if not original_cronjob_metadata:
+        return None
+
+    original_cronjob_uid = original_cronjob_metadata.get("uid", None)
+    if not original_cronjob_uid:
+        return None
+
+    selector = labels_selector(
+        jobname=original_cronjob.jobname, username=user.name, type="cronjobs"
+    )
+    all_cronjob_jobs = user.kapi.get_objects("jobs", selector=selector)
+    for maybe_manual_job_data in all_cronjob_jobs:
+        metadata = maybe_manual_job_data.get("metadata", None)
+        if not metadata:
+            # can't do anything without it, ignore this job
+            continue
+
+        annotations = metadata.get("annotations", None)
+        if not annotations:
+            continue
+
+        instantiate = annotations.get("cronjob.kubernetes.io/instantiate", None)
+        if instantiate != "manual":
+            continue
+
+        ownerreferences = metadata.get("ownerReferences", None)
+        if not ownerreferences:
+            continue
+
+        matching_reference = False
+        for reference in ownerreferences:
+            if reference.get("kind", None) != "CronJob":
+                continue
+
+            if reference.get("name", None) != original_cronjob.jobname:
+                continue
+
+            if reference.get("uid", None) == original_cronjob_uid:
+                matching_reference = True
+
+        if not matching_reference:
+            continue
+
+        maybe_job = Job.from_k8s_object(maybe_manual_job_data, "jobs")
+        if maybe_job.command != original_cronjob.command:
+            continue
+
+        # finally, everything matches, we are certain this job was manually created from the cronjob
+        job_status = _get_job_object_status(user, maybe_manual_job_data)
+        if job_status:
+            return job_status
+
+
 def _refresh_status_cronjob(user: User, job: Job):
     status_dict = utils.dict_get_object(job.k8s_object, "status")
 
@@ -77,6 +139,13 @@ def _refresh_status_cronjob(user: User, job: Job):
         job_status = _get_job_object_status(user, job_data)
         if job_status:
             job.status_short = job_status
+            # we found something! that's enough
+            return
+
+    # if we didn't find anything yet, try searching for manually restarted cronjobs
+    job_status = _refresh_status_cronjob_from_restarted_cronjob(user, original_cronjob=job)
+    if job_status:
+        job.status_short = job_status
 
 
 def _refresh_status_dp(user: User, job: Job):
