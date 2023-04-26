@@ -1,6 +1,7 @@
 # from tools-webservice toolsws/backends/kubernetes.py
 # Copyright (C) 2020 Bryan Davis <bd808@wikimedia.org>
 
+import os
 import requests
 import yaml
 from typing import Optional
@@ -46,14 +47,21 @@ class K8sClient:
         cluster = _find_cfg_obj(data, "clusters", context["cluster"])
         user = _find_cfg_obj(data, "users", context["user"])
 
-        return cls(
-            server=cluster["server"],
-            namespace=context["namespace"],
-            tls_cert_file=user["client-certificate"],
-            tls_key_file=user["client-key"],
-            # assume this runs in a pod
-            tls_ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-        )
+        # when loading relative paths in kubeconfig, do it from the file itself like the
+        # official libraries
+        old_dir = os.curdir
+        os.chdir(os.dirname(filename))
+        try:
+            return cls(
+                server=cluster["server"],
+                namespace=context["namespace"],
+                tls_cert_file=os.path.realpath(user["client-certificate"]),
+                tls_key_file=os.path.realpath(user["client-key"]),
+                # assume this runs in a pod
+                tls_ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+            )
+        finally:
+            os.chdir(old_dir)
 
     @classmethod
     def from_container_service_account(cls, *, namespace: str):
