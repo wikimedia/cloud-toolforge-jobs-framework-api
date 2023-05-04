@@ -54,7 +54,11 @@ class Run(Resource):
             )
 
         command = Command.from_api(
-            args.cmd, args.filelog, args.filelog_stdout, args.filelog_stderr, args.name
+            user_command=args.cmd,
+            filelog=args.filelog,
+            filelog_stdout=args.filelog_stdout,
+            filelog_stderr=args.filelog_stderr,
+            jobname=args.name,
         )
 
         try:
