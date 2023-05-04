@@ -8,6 +8,33 @@ import tjf.utils as utils
 from tjf.command import Command
 
 
+def test_generate_command_no_wrapper(tmp_path_factory):
+    # this is provided by a pytest fixture, https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html
+    directory = tmp_path_factory.mktemp("testcmd")
+
+    script_path = Path(__file__).parent / "helpers" / "gen-output" / "both.sh"
+
+    cmd = Command.from_api(
+        user_command=f"{script_path.absolute()} nowrapper",
+        use_wrapper=False,
+        filelog=False,
+        filelog_stdout=None,
+        filelog_stderr=None,
+        jobname="test",
+    )
+
+    generated = cmd.generate_for_k8s()
+
+    result = subprocess.run(
+        generated.command + generated.args, capture_output=True, text=True, cwd=directory
+    )
+
+    assert result.stdout == "this text has no meaningful content nowrapper,\n"
+    assert result.stderr == "it is just an example\n"
+
+    assert not any(directory.glob("*"))
+
+
 def test_generate_command_no_filelog(tmp_path_factory):
     # this is provided by a pytest fixture, https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html
     directory = tmp_path_factory.mktemp("testcmd")
@@ -15,16 +42,20 @@ def test_generate_command_no_filelog(tmp_path_factory):
     script_path = Path(__file__).parent / "helpers" / "gen-output" / "both.sh"
 
     cmd = Command.from_api(
-        user_command=str(script_path.absolute()),
+        user_command=f"{script_path.absolute()} nofilelog",
+        use_wrapper=True,
         filelog=False,
         filelog_stdout=None,
         filelog_stderr=None,
         jobname="test",
     )
 
-    result = subprocess.run(cmd.generate_for_k8s(), capture_output=True, text=True, cwd=directory)
+    generated = cmd.generate_for_k8s()
+    assert generated.args is None
 
-    assert result.stdout == "this text has no meaningful content,\n"
+    result = subprocess.run(generated.command, capture_output=True, text=True, cwd=directory)
+
+    assert result.stdout == "this text has no meaningful content nofilelog,\n"
     assert result.stderr == "it is just an example\n"
 
     assert not any(directory.glob("*"))
@@ -37,21 +68,25 @@ def test_generate_command_filelog(tmp_path_factory):
     script_path = Path(__file__).parent / "helpers" / "gen-output" / "both.sh"
 
     cmd = Command.from_api(
-        user_command=str(script_path.absolute()),
+        user_command=f"{script_path.absolute()} yesfilelog",
+        use_wrapper=True,
         filelog=True,
         filelog_stdout="test.out",
         filelog_stderr="test.err",
         jobname="test",
     )
 
-    result = subprocess.run(cmd.generate_for_k8s(), capture_output=True, text=True, cwd=directory)
+    generated = cmd.generate_for_k8s()
+    assert generated.args is None
+
+    result = subprocess.run(generated.command, capture_output=True, text=True, cwd=directory)
 
     assert result.stdout == ""
     assert result.stderr == ""
 
     stdout_file = directory / "test.out"
     assert stdout_file.exists()
-    assert stdout_file.read_text() == "this text has no meaningful content,\n"
+    assert stdout_file.read_text() == "this text has no meaningful content yesfilelog,\n"
 
     stderr_file = directory / "test.err"
     assert stderr_file.exists()
@@ -90,6 +125,13 @@ def test_generate_command_filelog(tmp_path_factory):
             None,
         ],
         [
+            "cmdname with-arguments 'other argument with spaces'",
+            fake_k8s.JOB_CONT_BUILDPACK_NO_EMAILS_ARRAY,
+            False,
+            None,
+            None,
+        ],
+        [
             "./command-by-the-user.sh --with-args ; ./other-command.sh",
             fake_k8s.JOB_CONT_NO_EMAILS_YES_FILELOG_NEW_ARRAY,
             True,
@@ -118,8 +160,11 @@ def test_command_array_parsing_from_k8s(
     k8s_metadata = utils.dict_get_object(object, "metadata")
     spec = utils.dict_get_object(object, "spec")
     k8s_command = spec["template"]["spec"]["containers"][0]["command"]
+    k8s_arguments = spec["template"]["spec"]["containers"][0].get("arguments", None)
 
-    command = Command.from_k8s(k8s_metadata=k8s_metadata, k8s_command=k8s_command)
+    command = Command.from_k8s(
+        k8s_metadata=k8s_metadata, k8s_command=k8s_command, k8s_arguments=k8s_arguments
+    )
 
     assert command
     assert command.user_command == user_command

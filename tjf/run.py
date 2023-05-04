@@ -53,8 +53,12 @@ class Run(Resource):
                 "A job with the same name exists already", http_status_code=409
             )
 
+        if args.filelog and not image.type.supports_file_logs():
+            raise TjfValidationError("Buildpack images do not support file logs")
+
         command = Command.from_api(
             user_command=args.cmd,
+            use_wrapper=image.type.use_command_wrapper(),
             filelog=args.filelog,
             filelog_stdout=args.filelog_stdout,
             filelog_stderr=args.filelog_stderr,
@@ -64,7 +68,7 @@ class Run(Resource):
         try:
             job = Job(
                 command=command,
-                image=image.container,
+                image=image,
                 jobname=args.name,
                 ns=user.namespace,
                 username=user.name,

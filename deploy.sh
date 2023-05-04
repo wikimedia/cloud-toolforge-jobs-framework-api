@@ -11,7 +11,7 @@ if [ -z "${deploy_environment}" ] ; then
     deploy_environment=$project
 fi
 
-maybe_values_file=${HELMCHART}/values-${deploy_environment}.yaml
+maybe_values_file=${BASE_DIR}/deployment/values/${deploy_environment}.yaml
 if [ -r $maybe_values_file ] ; then
     values_file="-f $maybe_values_file"
 else

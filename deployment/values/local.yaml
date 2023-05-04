@@ -5,3 +5,6 @@ webservice:
     repository: jobs-api
     tag: latest
     pullpolicy: Never
+
+harbor:
+  host: toolsbeta-harbor.wmcloud.org

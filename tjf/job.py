@@ -17,7 +17,7 @@
 import re
 import time
 from tjf.error import TjfError, TjfValidationError
-from tjf.images import image_by_container_url
+from tjf.images import Image, image_by_container_url
 import tjf.utils as utils
 from common.k8sclient import K8sClient
 from tjf.labels import generate_labels
@@ -62,7 +62,7 @@ class Job:
     def __init__(
         self,
         command: Command,
-        image,
+        image: Image,
         jobname,
         ns,
         username,
@@ -136,11 +136,14 @@ class Job:
         cpu = resources_limits.get("cpu", JOB_DEFAULT_CPU)
 
         k8s_command = podspec["template"]["spec"]["containers"][0]["command"]
-        command = Command.from_k8s(k8s_metadata=metadata, k8s_command=k8s_command)
+        k8s_arguments = podspec["template"]["spec"]["containers"][0].get("arguments", None)
+        command = Command.from_k8s(
+            k8s_metadata=metadata, k8s_command=k8s_command, k8s_arguments=k8s_arguments
+        )
 
         return cls(
             command=command,
-            image=image,
+            image=image_by_container_url(image),
             jobname=jobname,
             ns=namespace,
             username=user,
@@ -186,6 +189,20 @@ class Job:
             filelog=self.command.filelog,
             emails=self.emails,
         )
+        generated_command = self.command.generate_for_k8s()
+
+        if self.image.type.use_standard_nfs():
+            working_dir = f"/data/project/{self.username}"
+            env = []
+        else:
+            working_dir = None
+            env = [
+                {
+                    "name": "NO_HOME",
+                    "value": "a buildservice pod does not need a home env",
+                }
+            ]
+
         return {
             "template": {
                 "metadata": {"labels": labels},
@@ -194,9 +211,11 @@ class Job:
                     "containers": [
                         {
                             "name": "job",
-                            "image": self.image,
-                            "workingDir": "/data/project/{}".format(self.username),
-                            "command": self.command.generate_for_k8s(),
+                            "image": self.image.container,
+                            "workingDir": working_dir,
+                            "env": env,
+                            "command": generated_command.command,
+                            "args": generated_command.args,
                             "resources": self._generate_container_resources(),
                         }
                     ],
@@ -320,8 +339,8 @@ class Job:
         obj = {
             "name": self.jobname,
             "cmd": self.command.user_command,
-            "image": "unknown",
-            "image_state": "unknown",
+            "image": self.image.canonical_name,
+            "image_state": self.image.state,
             "filelog": f"{self.command.filelog}",
             "filelog_stdout": self.command.filelog_stdout,
             "filelog_stderr": self.command.filelog_stderr,
@@ -330,11 +349,6 @@ class Job:
             "emails": self.emails,
             "retry": self.retry,
         }
-
-        image = image_by_container_url(self.image)
-        if image:
-            obj["image"] = image.canonical_name
-            obj["image_state"] = image.state
 
         if self.schedule is not None:
             obj["schedule"] = self.schedule

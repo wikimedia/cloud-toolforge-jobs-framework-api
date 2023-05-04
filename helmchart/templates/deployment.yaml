@@ -9,7 +9,7 @@ metadata:
   annotations:
     # use https://github.com/stakater/reloader (via the cert-manager deployment)
     # to restart when certificates get renewed
-    configmap.reloader.stakater.com/reload: "nginx-config"
+    configmap.reloader.stakater.com/reload: "nginx-config,harbor-config"
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-api-gateway-server"
 spec:
   replicas: {{ .Values.replicas }}
@@ -36,6 +36,10 @@ spec:
           readOnly: true
         - mountPath: /var/lib/sss/pipes
           name: sssd-pipes
+        - mountPath: /etc/jobs-api/harbor.json
+          subPath: harbor.json
+          name: harbor-config
+          readOnly: true
       - name: nginx
         image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}
         imagePullPolicy: Always
@@ -77,8 +81,14 @@ spec:
         name: sssd-pipes
       - configMap:
           items:
-          - key: nginx.conf
-            path: nginx.conf
+            - key: harbor.json
+              path: harbor.json
+          name: harbor-config
+        name: harbor-config
+      - configMap:
+          items:
+            - key: nginx.conf
+              path: nginx.conf
           name: nginx-config
         name: nginx-config
       - name: api-gateway-server-cert
