@@ -50,7 +50,7 @@ class K8sClient:
         # when loading relative paths in kubeconfig, do it from the file itself like the
         # official libraries
         old_dir = os.curdir
-        os.chdir(os.dirname(filename))
+        os.chdir(os.path.dirname(filename))
         try:
             return cls(
                 server=cluster["server"],
