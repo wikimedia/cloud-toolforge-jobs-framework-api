@@ -2,7 +2,7 @@ import pytest
 from common.k8sclient import K8sClient
 from tests.fake_k8s import FAKE_IMAGE_CONFIG
 from tjf.app import create_app
-from tjf.images import image_get_url, update_available_images, AVAILABLE_IMAGES
+from tjf.images import image_by_name, update_available_images, AVAILABLE_IMAGES
 
 
 @pytest.fixture
@@ -36,16 +36,16 @@ def test_available_images_len(images_available):
 
 
 @pytest.mark.parametrize(
-    ["name", "expected"],
+    ["name", "url"],
     [
         ["node12", "docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base:latest"],
         ["tf-node12", "docker-registry.tools.wmflabs.org/toolforge-node12-sssd-base:latest"],
         ["php7.3", "docker-registry.tools.wmflabs.org/toolforge-php73-sssd-base:latest"],
     ],
 )
-def test_image_get_url(images_available, name, expected):
-    """Basic test for the image_get_url() func."""
-    assert image_get_url(name) == expected
+def test_image_by_name(images_available, name, url):
+    """Basic test for the image_by_name() func."""
+    assert image_by_name(name).container == url
 
 
 @pytest.fixture()

@@ -17,7 +17,7 @@
 from tjf.error import TjfError, TjfValidationError
 from tjf.job import Job
 from flask_restful import Resource, reqparse
-from tjf.images import image_by_name, image_get_url
+from tjf.images import image_by_name
 from tjf.user import User
 from tjf.ops import find_job, create_job
 from tjf.command import Command
@@ -43,9 +43,10 @@ class Run(Resource):
         user = User.from_request()
 
         args = parser.parse_args()
+        image = image_by_name(args.imagename)
 
-        if not image_by_name(args.imagename):
-            raise TjfValidationError(f"Invalid container image '{args.imagename}'")
+        if not image:
+            raise TjfValidationError(f"No such image '{args.imagename}'")
 
         if find_job(user=user, jobname=args.name) is not None:
             raise TjfValidationError(
@@ -59,7 +60,7 @@ class Run(Resource):
         try:
             job = Job(
                 command=command,
-                image=image_get_url(args.imagename),
+                image=image.container,
                 jobname=args.name,
                 ns=user.namespace,
                 username=user.name,
