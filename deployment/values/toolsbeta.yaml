@@ -1,6 +1,2 @@
-webservice:
-  image:
-    tag: "811164e"
-
 harbor:
   host: toolsbeta-harbor.wmcloud.org
