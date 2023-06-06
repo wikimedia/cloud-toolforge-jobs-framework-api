@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+from toolforge_weld.errors import ToolforgeError, ToolforgeUserError
 
 
 class TjfError(Exception):
@@ -35,3 +36,11 @@ class TjfValidationError(TjfClientError):
     """Custom error class for jobs-api errors caused by invalid data."""
 
     pass
+
+
+def tjf_error_from_weld_error(error: ToolforgeError) -> TjfError:
+    error_class = TjfError
+    if isinstance(error, ToolforgeUserError):
+        error_class = TjfClientError
+
+    return error_class(message=error.message, data=error.context)

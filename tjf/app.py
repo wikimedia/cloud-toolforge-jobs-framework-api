@@ -17,7 +17,8 @@
 
 from flask import Flask, jsonify
 from flask_restful import Api
-from tjf.error import TjfError
+from toolforge_weld.errors import ToolforgeError
+from tjf.error import TjfError, tjf_error_from_weld_error
 from tjf.healthz import Healthz
 from tjf.metrics import metrics_init_app
 from tjf.run import Run
@@ -34,12 +35,17 @@ class TjfApi(Api):
 
     def handle_error(self, e):
         """Custom error handler."""
-        if not isinstance(e, TjfError):
+        if isinstance(e, ToolforgeError):
+            cause = e.__cause__
+            e = tjf_error_from_weld_error(e)
+        elif isinstance(e, TjfError):
+            cause = e.__cause__
+        else:
             return super().handle_error(e)
 
         message = str(e)
-        if e.__cause__:
-            message += f" ({str(e.__cause__)})"
+        if cause:
+            message += f" ({str(cause)})"
 
         return jsonify({"message": message, "data": e.data}), e.http_status_code
 
