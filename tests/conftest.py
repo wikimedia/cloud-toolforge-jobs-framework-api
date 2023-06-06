@@ -3,11 +3,11 @@ from pathlib import Path
 
 import requests_mock
 import pytest
+from toolforge_weld.kubernetes_config import Kubeconfig, fake_kube_config
 
-from common.k8sclient import K8sClient
 from tests.fake_k8s import FAKE_HARBOR_HOST
 import tjf.images
-from tjf.user import AUTH_HEADER, User
+from tjf.user import AUTH_HEADER
 from tjf.images import HarborConfig
 
 
@@ -31,11 +31,10 @@ def requests_mock_module():
 
 @pytest.fixture(scope="module")
 def patch_kube_config_loading(monkeymodule):
-    def noop(*args, **kwargs):
-        return True
+    def load_fake(*args, **kwargs):
+        return fake_kube_config()
 
-    monkeymodule.setattr(User, "validate_kubeconfig", noop)
-    monkeymodule.setattr(K8sClient, "from_file", noop)
+    monkeymodule.setattr(Kubeconfig, "from_path", load_fake)
 
 
 @pytest.fixture(scope="module")

@@ -14,12 +14,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import os
-import yaml
+from pathlib import Path
 from flask import request
 from cryptography import x509
-from common.k8sclient import K8sClient
-from tjf.error import TjfClientError, TjfError
+from toolforge_weld.kubernetes import K8sClient
+from toolforge_weld.kubernetes_config import Kubeconfig
+from tjf.error import TjfClientError
+from tjf.utils import USER_AGENT
 
 
 AUTH_HEADER = "ssl-client-subject-dn"
@@ -37,39 +38,12 @@ class User:
         self.namespace = f"tool-{self.name}"
 
         # TODO: fetch this from LDAP instead?
-        self.home = f"/data/project/{name}"
+        self.home = Path(f"/data/project/{name}")
 
-        self.kubeconfig_path = os.path.join(self.home, ".kube", "config")
-        self.validate_kubeconfig()
-        self.kapi = K8sClient.from_file(filename=self.kubeconfig_path)
-
-    def validate_kubeconfig(self):
-        path = self.kubeconfig_path
-
-        try:
-            with open(path) as file:
-                config = yaml.safe_load(file)
-        except Exception as e:
-            raise TjfError(f"Failed to read kubeconfig for user '{self.name}'") from e
-
-        if config is None:
-            raise TjfError(f"User kubeconfig file '{path}' is empty")
-
-        # copied from maintain_kubeusers :-P
-        if all(
-            k in config
-            for k in (
-                "apiVersion",
-                "kind",
-                "clusters",
-                "users",
-                "contexts",
-                "current-context",
-            )
-        ):
-            return config
-        else:
-            raise TjfError(f"Invalid kubeconfig for user '{self.name}'")
+        self.kapi = K8sClient(
+            kubeconfig=Kubeconfig.from_path(path=(self.home / ".kube" / "config")),
+            user_agent=USER_AGENT,
+        )
 
     @classmethod
     def from_request(self):

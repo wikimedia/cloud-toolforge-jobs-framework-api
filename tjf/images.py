@@ -25,10 +25,12 @@ import requests
 import urllib.parse
 import yaml
 from flask_restful import Resource
+from toolforge_weld.kubernetes import K8sClient
+from toolforge_weld.kubernetes_config import Kubeconfig
 
-from common.k8sclient import K8sClient
 from tjf.error import TjfError
 from tjf.user import User
+from tjf.utils import USER_AGENT
 
 
 LOGGER = logging.getLogger(__name__)
@@ -77,7 +79,10 @@ HARBOR_IMAGE_STATE = "stable"
 
 
 def update_available_images():
-    client = K8sClient.from_container_service_account(namespace="tf-public")
+    client = K8sClient(
+        kubeconfig=Kubeconfig.from_container_service_account(namespace="tf-public"),
+        user_agent=USER_AGENT,
+    )
     configmap = client.get_object("configmaps", "image-config")
     yaml_data = yaml.safe_load(configmap["data"]["images-v1.yaml"])
 

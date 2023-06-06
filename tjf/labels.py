@@ -15,6 +15,9 @@
 #
 
 
+from typing import Dict
+
+
 def generate_labels(
     *,
     jobname: str,
@@ -23,7 +26,7 @@ def generate_labels(
     filelog: bool,
     emails: str,
     version: bool = True,
-):
+) -> Dict[str, str]:
     obj = {
         "toolforge": "tool",
         "app.kubernetes.io/managed-by": "toolforge-jobs-framework",
@@ -48,17 +51,12 @@ def generate_labels(
     return obj
 
 
-def labels_selector(jobname: str, username: str, type: str):
-    return ",".join(
-        [
-            "{k}={v}".format(k=k, v=v)
-            for k, v in generate_labels(
-                jobname=jobname,
-                username=username,
-                type=type,
-                filelog=False,
-                emails=None,
-                version=False,
-            ).items()
-        ]
+def labels_selector(jobname: str, username: str, type: str) -> Dict[str, str]:
+    return generate_labels(
+        jobname=jobname,
+        username=username,
+        type=type,
+        filelog=False,
+        emails=None,
+        version=False,
     )

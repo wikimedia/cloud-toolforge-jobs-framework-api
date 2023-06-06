@@ -27,7 +27,7 @@ def test_get_quota_error():
 def test_refresh_job_short_status_cronjob(cronjob, job, status_short):
     def setup_user():
         class FakeK8sApi:
-            def get_objects(self, kind, selector):
+            def get_objects(self, kind, *, label_selector):
                 if kind == "jobs":
                     return [job]
                 raise Exception("not supposed to happen")

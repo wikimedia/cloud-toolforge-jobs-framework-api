@@ -21,6 +21,11 @@ from typing import Set
 from tjf.error import TjfValidationError
 
 
+USER_AGENT = "jobs-api"
+
+KUBERNETES_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+
 def dict_get_object(dict, kind):
     for o in dict:
         if o == kind:

@@ -6,3 +6,4 @@ requests==2.25.1
 # transitory problem https://github.com/pallets/flask/issues/4456
 markupsafe==2.0.1
 cryptography==39.0.1
+toolforge-weld==1.1.0

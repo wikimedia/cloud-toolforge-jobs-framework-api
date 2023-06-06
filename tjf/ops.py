@@ -88,13 +88,15 @@ def delete_job(user: User, jobname: str):
         return
 
     for object in ["jobs", "cronjobs", "deployments"]:
-        user.kapi.delete_objects(object, selector=labels_selector(jobname, user.name, object))
+        user.kapi.delete_objects(
+            object, label_selector=labels_selector(jobname, user.name, object)
+        )
 
     # extra explicit cleanup of jobs (may have been created by cronjobs)
-    user.kapi.delete_objects("jobs", selector=labels_selector(jobname, user.name, None))
+    user.kapi.delete_objects("jobs", label_selector=labels_selector(jobname, user.name, None))
 
     # extra explicit cleanup of pods
-    user.kapi.delete_objects("pods", selector=labels_selector(jobname, user.name, None))
+    user.kapi.delete_objects("pods", label_selector=labels_selector(jobname, user.name, None))
 
 
 def find_job(user: User, jobname: str):
@@ -115,8 +117,8 @@ def list_all_jobs(user: User, jobname: str):
     job_list = []
 
     for kind in ["jobs", "cronjobs", "deployments"]:
-        selector = labels_selector(jobname=jobname, username=user.name, type=kind)
-        for k8s_obj in user.kapi.get_objects(kind, selector=selector):
+        label_selector = labels_selector(jobname=jobname, username=user.name, type=kind)
+        for k8s_obj in user.kapi.get_objects(kind, label_selector=label_selector):
             job = Job.from_k8s_object(object=k8s_obj, kind=kind)
             refresh_job_short_status(user, job)
             refresh_job_long_status(user, job)
@@ -127,10 +129,10 @@ def list_all_jobs(user: User, jobname: str):
 
 def _wait_for_pod_exit(user: User, job: Job, timeout: int = 30):
     """Wait for all pods belonging to a specific job to exit."""
-    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
+    label_selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
 
     for _ in range(timeout * 2):
-        pods = user.kapi.get_objects("pods", selector=selector)
+        pods = user.kapi.get_objects("pods", label_selector=label_selector)
         if len(pods) == 0:
             return True
         time.sleep(0.5)
@@ -150,12 +152,12 @@ def _launch_manual_cronjob(user: User, job: Job):
 
 
 def restart_job(user: User, job: Job):
-    selector = labels_selector(job.jobname, user.name, job.k8s_type)
+    label_selector = labels_selector(job.jobname, user.name, job.k8s_type)
 
     if job.k8s_type == "cronjobs":
         # Delete currently running jobs to avoid duplication
-        user.kapi.delete_objects("jobs", selector=selector)
-        user.kapi.delete_objects("pods", selector=selector)
+        user.kapi.delete_objects("jobs", label_selector=label_selector)
+        user.kapi.delete_objects("pods", label_selector=label_selector)
 
         # Wait until the currently running job stops
         _wait_for_pod_exit(user, job)
@@ -164,7 +166,7 @@ def restart_job(user: User, job: Job):
         _launch_manual_cronjob(user, job)
     elif job.k8s_type == "deployments":
         # Simply delete the pods and let Kubernetes re-create them
-        user.kapi.delete_objects("pods", selector=selector)
+        user.kapi.delete_objects("pods", sellabel_selectorector=label_selector)
     elif job.k8s_type == "jobs":
         raise TjfValidationError("Unable to restart a single job")
     else:

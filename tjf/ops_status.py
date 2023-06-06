@@ -3,11 +3,11 @@
 
 from datetime import datetime
 from typing import Optional
-from common.k8sclient import KUBERNETES_DATE_FORMAT
 from tjf.error import TjfError
 from tjf.labels import labels_selector
 from tjf.job import Job
 from tjf.user import User
+from tjf.utils import KUBERNETES_DATE_FORMAT
 import tjf.utils as utils
 
 
@@ -76,10 +76,10 @@ def _refresh_status_cronjob_from_restarted_cronjob(
     if not original_cronjob_uid:
         return None
 
-    selector = labels_selector(
+    label_selector = labels_selector(
         jobname=original_cronjob.jobname, username=user.name, type="cronjobs"
     )
-    all_cronjob_jobs = user.kapi.get_objects("jobs", selector=selector)
+    all_cronjob_jobs = user.kapi.get_objects("jobs", label_selector=label_selector)
     for maybe_manual_job_data in all_cronjob_jobs:
         metadata = maybe_manual_job_data.get("metadata", None)
         if not metadata:
@@ -169,7 +169,7 @@ def _refresh_status_dp(user: User, job: Job):
     # Attempt to gather more details if possible
     if job.status_short == "Not running":
         pod_selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
-        pods = user.kapi.get_objects("pods", selector=pod_selector)
+        pods = user.kapi.get_objects("pods", label_selector=pod_selector)
 
         for pod in pods:
             if "containerStatuses" not in pod["status"]:
@@ -209,8 +209,8 @@ def refresh_job_short_status(user: User, job: Job):
 
 
 def refresh_job_long_status(user: User, job: Job):
-    selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
-    podlist = user.kapi.get_objects("pods", selector=selector)
+    label_selector = labels_selector(jobname=job.jobname, username=user.name, type=job.k8s_type)
+    podlist = user.kapi.get_objects("pods", label_selector=label_selector)
 
     if len(podlist) == 0:
         job.status_long = "No pods were created for this job."

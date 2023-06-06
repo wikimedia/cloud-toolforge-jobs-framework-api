@@ -16,10 +16,10 @@
 
 import re
 import time
+from toolforge_weld.kubernetes import K8sClient
 from tjf.error import TjfError, TjfValidationError
 from tjf.images import Image, image_by_container_url
 import tjf.utils as utils
-from common.k8sclient import K8sClient
 from tjf.labels import generate_labels
 from tjf.command import Command
 

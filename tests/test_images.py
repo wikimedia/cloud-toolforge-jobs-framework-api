@@ -1,6 +1,7 @@
 import pytest
-from common.k8sclient import K8sClient
+from toolforge_weld.kubernetes_config import Kubeconfig
 from tests.fake_k8s import FAKE_HARBOR_HOST, FAKE_IMAGE_CONFIG
+import tjf.images
 from tjf.app import create_app
 from tjf.images import (
     image_by_name,
@@ -13,7 +14,7 @@ from tjf.images import (
 @pytest.fixture
 def fake_k8s_client(monkeypatch):
     class FakeClient:
-        def __init__(self, *, namespace: str):
+        def __init__(self, **kwargs):
             pass
 
         def get_object(self, kind, name):
@@ -27,7 +28,11 @@ def fake_k8s_client(monkeypatch):
                     },
                 }
 
-    monkeypatch.setattr(K8sClient, "from_container_service_account", FakeClient)
+    def noop(**kwargs):
+        return True
+
+    monkeypatch.setattr(tjf.images, "K8sClient", FakeClient)
+    monkeypatch.setattr(Kubeconfig, "from_container_service_account", noop)
 
 
 @pytest.fixture
