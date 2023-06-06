@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import random
 from typing import Dict, List, Optional
 from tjf.error import TjfValidationError
 
@@ -122,7 +123,7 @@ class CronExpression:
         return f"{self.minute} {self.hour} {self.day} {self.month} {self.day_of_week}"
 
     @classmethod
-    def parse(cls, value: str) -> "CronExpression":
+    def parse(cls, value: str, random_seed: str) -> "CronExpression":
         if value.startswith("@"):
             mapped = AT_MAPPING.get(value, None)
             if not mapped:
@@ -130,6 +131,18 @@ class CronExpression:
                     f"Invalid at-macro '{value}', supported macros are: {', '.join(AT_MAPPING.keys())}"
                 )
             parts = mapped.split(" ")
+
+            # provide consistent times for the same job
+            random.seed(random_seed)
+
+            for i, field in enumerate(FIELDS):
+                if parts[i] == "*":
+                    continue
+                parts[i] = str(random.randint(field.min, field.max))
+
+            # reset randomness to a non-deterministic seed
+            random.seed()
+
         else:
             parts = [part for part in value.lower().split(" ") if part != ""]
             if len(parts) != 5:

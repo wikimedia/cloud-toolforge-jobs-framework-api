@@ -68,7 +68,7 @@ class Run(Resource):
 
         if args.schedule:
             try:
-                schedule = CronExpression.parse(args.schedule)
+                schedule = CronExpression.parse(args.schedule, f"{user.namespace} {args.name}")
             except CronParsingError as e:
                 raise TjfValidationError(
                     f"Unable to parse cron expression '{args.schedule}'"
