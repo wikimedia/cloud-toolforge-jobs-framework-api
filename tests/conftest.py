@@ -17,6 +17,11 @@ FIXTURES_PATH = Path(__file__).parent.resolve() / "helpers" / "fixtures"
 
 
 @pytest.fixture(scope="module")
+def fixtures_path() -> Path:
+    yield FIXTURES_PATH
+
+
+@pytest.fixture(scope="module")
 def monkeymodule():
     """Needed to use monkeypatch at module scope."""
     with pytest.MonkeyPatch.context() as mp:
@@ -43,7 +48,11 @@ def fake_user(patch_kube_config_loading):
 
 
 @pytest.fixture(scope="module")
-def fake_harbor_api(monkeymodule, requests_mock_module):
+def fake_harbor_api(
+    monkeymodule: pytest.MonkeyPatch,
+    fixtures_path: Path,
+    requests_mock_module: requests_mock.Mocker,
+):
     def fake_get_harbor_config() -> HarborConfig:
         return HarborConfig(
             host=FAKE_HARBOR_HOST,
@@ -53,17 +62,17 @@ def fake_harbor_api(monkeymodule, requests_mock_module):
 
     requests_mock_module.get(
         f"https://{FAKE_HARBOR_HOST}/api/v2.0/projects/tool-other/repositories/tagged/artifacts",
-        json=json.loads((FIXTURES_PATH / "harbor" / "artifact-list-other.json").read_text()),
+        json=json.loads((fixtures_path / "harbor" / "artifact-list-other.json").read_text()),
     )
     requests_mock_module.get(
         f"https://{FAKE_HARBOR_HOST}/api/v2.0/projects/tool-some-tool/repositories/some-container/artifacts",
-        json=json.loads((FIXTURES_PATH / "harbor" / "artifact-list-some-tool.json").read_text()),
+        json=json.loads((fixtures_path / "harbor" / "artifact-list-some-tool.json").read_text()),
     )
     requests_mock_module.get(
         f"https://{FAKE_HARBOR_HOST}/api/v2.0/projects/tool-other/repositories",
-        json=json.loads((FIXTURES_PATH / "harbor" / "repository-list-other.json").read_text()),
+        json=json.loads((fixtures_path / "harbor" / "repository-list-other.json").read_text()),
     )
     requests_mock_module.get(
         f"https://{FAKE_HARBOR_HOST}/api/v2.0/projects/tool-some-tool/repositories",
-        json=json.loads((FIXTURES_PATH / "harbor" / "repository-list-some-tool.json").read_text()),
+        json=json.loads((fixtures_path / "harbor" / "repository-list-some-tool.json").read_text()),
     )

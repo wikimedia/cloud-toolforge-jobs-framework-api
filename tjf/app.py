@@ -21,6 +21,7 @@ from toolforge_weld.errors import ToolforgeError
 from tjf.error import TjfError, tjf_error_from_weld_error
 from tjf.healthz import Healthz
 from tjf.metrics import metrics_init_app
+from tjf.quota import Quota
 from tjf.run import Run
 from tjf.show import Show
 from tjf.list import List
@@ -64,6 +65,7 @@ def create_app(*, load_images=True):
     api.add_resource(Restart, "/api/v1/restart/<name>")
     api.add_resource(Flush, "/api/v1/flush/")
     api.add_resource(Images, "/api/v1/images/")
+    api.add_resource(Quota, "/api/v1/quota/")
 
     if load_images:
         # before app startup!
