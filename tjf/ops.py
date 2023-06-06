@@ -17,6 +17,7 @@
 import time
 
 import requests
+from toolforge_weld.kubernetes import parse_quantity
 from tjf.error import TjfError, TjfValidationError
 from tjf.k8s_errors import create_error_from_k8s_response
 from tjf.labels import labels_selector
@@ -37,10 +38,10 @@ def validate_job_limits(user: User, job: Job):
         max_limits = limit["max"]
 
         if job.cpu:
-            parsed_cpu = utils.parse_quantity(job.cpu)
+            parsed_cpu = parse_quantity(job.cpu)
             if "cpu" in min_limits:
                 cpu_min = min_limits["cpu"]
-                if parsed_cpu < utils.parse_quantity(cpu_min):
+                if parsed_cpu < parse_quantity(cpu_min):
                     raise TjfValidationError(
                         f"Requested CPU {job.cpu} is less than minimum "
                         f"required per container ({cpu_min})"
@@ -48,24 +49,24 @@ def validate_job_limits(user: User, job: Job):
 
             if "cpu" in max_limits:
                 cpu_max = max_limits["cpu"]
-                if parsed_cpu > utils.parse_quantity(cpu_max):
+                if parsed_cpu > parse_quantity(cpu_max):
                     raise TjfValidationError(
                         f"Requested CPU {job.cpu} is over maximum "
                         f"allowed per container ({cpu_max})"
                     )
 
         if job.memory:
-            parsed_memory = utils.parse_quantity(job.memory)
+            parsed_memory = parse_quantity(job.memory)
             if "memory" in min_limits:
                 memory_min = min_limits["memory"]
-                if parsed_memory < utils.parse_quantity(memory_min):
+                if parsed_memory < parse_quantity(memory_min):
                     raise TjfValidationError(
                         f"Requested memory {job.memory} is less than minimum "
                         f"required per container ({memory_min})"
                     )
             if "memory" in max_limits:
                 memory_max = max_limits["memory"]
-                if parsed_memory > utils.parse_quantity(memory_max):
+                if parsed_memory > parse_quantity(memory_max):
                     raise TjfValidationError(
                         f"Requested memory {job.memory} is over maximum "
                         f"allowed per container ({memory_max})"

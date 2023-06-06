@@ -17,7 +17,7 @@
 import re
 import time
 from typing import Optional
-from toolforge_weld.kubernetes import K8sClient
+from toolforge_weld.kubernetes import K8sClient, parse_quantity
 from tjf.cron import CronExpression
 from tjf.error import TjfError, TjfValidationError
 from tjf.images import Image, image_by_container_url
@@ -177,16 +177,16 @@ class Job:
             container_resources = {"limits": {}, "requests": {}}
 
         if self.memory:
-            dec_mem = utils.parse_quantity(self.memory)
-            if dec_mem < utils.parse_quantity(JOB_DEFAULT_MEMORY):
+            dec_mem = parse_quantity(self.memory)
+            if dec_mem < parse_quantity(JOB_DEFAULT_MEMORY):
                 container_resources["requests"]["memory"] = self.memory
             else:
                 container_resources["requests"]["memory"] = str(dec_mem / 2)
             container_resources["limits"]["memory"] = self.memory
 
         if self.cpu:
-            dec_cpu = utils.parse_quantity(self.cpu)
-            if dec_cpu < utils.parse_quantity(JOB_DEFAULT_CPU):
+            dec_cpu = parse_quantity(self.cpu)
+            if dec_cpu < parse_quantity(JOB_DEFAULT_CPU):
                 container_resources["requests"]["cpu"] = self.cpu
             else:
                 container_resources["requests"]["cpu"] = str(dec_cpu / 2)
