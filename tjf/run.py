@@ -14,6 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from tjf.cron import CronExpression, CronParsingError
 from tjf.error import TjfError, TjfValidationError
 from tjf.job import Job
 from flask_restful import Resource, reqparse
@@ -65,6 +66,16 @@ class Run(Resource):
             jobname=args.name,
         )
 
+        if args.schedule:
+            try:
+                schedule = CronExpression.parse(args.schedule)
+            except CronParsingError as e:
+                raise TjfValidationError(
+                    f"Unable to parse cron expression '{args.schedule}'"
+                ) from e
+        else:
+            schedule = None
+
         try:
             job = Job(
                 command=command,
@@ -72,7 +83,7 @@ class Run(Resource):
                 jobname=args.name,
                 ns=user.namespace,
                 username=user.name,
-                schedule=args.schedule,
+                schedule=schedule,
                 cont=args.continuous,
                 k8s_object=None,
                 retry=args.retry,

@@ -70,14 +70,6 @@ def create_error_from_k8s_response(
             "An object with the same name exists already", http_status_code=409, data=error_data
         )
 
-    if (
-        e.response.status_code == 422
-        or str(e).startswith("422 Client Error: Unprocessable Entity for url")
-    ) and job.k8s_type == "cronjobs":
-        return TjfValidationError(
-            "Failed to create job, likely wrong schedule time", data=error_data
-        )
-
     return TjfError(
         "Failed to create a job, likely an internal bug in the jobs framework.", data=error_data
     )

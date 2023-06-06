@@ -16,7 +16,9 @@
 
 import re
 import time
+from typing import Optional
 from toolforge_weld.kubernetes import K8sClient
+from tjf.cron import CronExpression
 from tjf.error import TjfError, TjfValidationError
 from tjf.images import Image, image_by_container_url
 import tjf.utils as utils
@@ -66,7 +68,7 @@ class Job:
         jobname,
         ns,
         username,
-        schedule,
+        schedule: Optional[CronExpression],
         cont,
         k8s_object,
         retry: int,
@@ -107,9 +109,21 @@ class Job:
     @classmethod
     def from_k8s_object(cls, object: dict, kind: str):
         spec = utils.dict_get_object(object, "spec")
+        metadata = utils.dict_get_object(object, "metadata")
 
         if kind == "cronjobs":
-            schedule = spec["schedule"]
+            if "annotations" in metadata:
+                configured_schedule = metadata["annotations"].get(
+                    "jobs.toolforge.org/cron-expression", spec["schedule"]
+                )
+            else:
+                configured_schedule = spec["schedule"]
+
+            schedule = CronExpression.from_job(
+                actual=spec["schedule"],
+                configured=configured_schedule,
+            )
+
             cont = False
             podspec = spec["jobTemplate"]["spec"]
         elif kind == "deployments":
@@ -123,7 +137,6 @@ class Job:
         else:
             raise TjfError("Unable to parse Kubernetes object", data={"object": object})
 
-        metadata = utils.dict_get_object(object, "metadata")
         jobname = metadata["name"]
         namespace = metadata["namespace"]
         user = "".join(namespace.split("-", 1)[1:])
@@ -238,9 +251,12 @@ class Job:
                 "name": self.jobname,
                 "namespace": self.ns,
                 "labels": labels,
+                "annotations": {
+                    "jobs.toolforge.org/cron-expression": self.schedule.text,
+                },
             },
             "spec": {
-                "schedule": self.schedule,
+                "schedule": self.schedule.format(),
                 "successfulJobsHistoryLimit": 0,
                 "failedJobsHistoryLimit": 0,
                 "concurrencyPolicy": "Forbid",
@@ -351,7 +367,8 @@ class Job:
         }
 
         if self.schedule is not None:
-            obj["schedule"] = self.schedule
+            obj["schedule"] = self.schedule.text
+            obj["schedule_actual"] = self.schedule.format()
 
         if self.cont:
             obj["continuous"] = True
