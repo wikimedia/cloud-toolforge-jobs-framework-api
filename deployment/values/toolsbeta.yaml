@@ -1,2 +1,6 @@
+webservice:
+  image:
+    tag: a5eb7dc
+
 harbor:
   host: toolsbeta-harbor.wmcloud.org
